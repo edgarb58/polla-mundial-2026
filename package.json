@@ -1,0 +1,11 @@
+{
+  "name": "polla-mundial-2026",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Polla del Mundial 2026 — frontend estático (Vercel) + backend Supabase",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs && npx --yes serve dist"
+  }
+}
