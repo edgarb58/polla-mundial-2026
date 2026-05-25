@@ -254,12 +254,13 @@ drop policy if exists p_config_adm on config;
 create policy p_config_adm on config for all using (is_admin()) with check (is_admin());
 
 -- PREDICTIONS  (lo más importante):
---  · Ver: las TUYAS siempre; las AJENAS solo si el partido ya empezó/terminó.
+--  · Ver: las TUYAS siempre; las AJENAS solo cuando el partido YA ESTÁ CERRADO
+--    (10 min antes del inicio), para que nadie copie pero todos puedan comparar.
 --  · Crear/editar: solo las tuyas y SOLO si el partido no está bloqueado.
 --  · 'points' lo pone el servidor (trigger), el cliente no puede tocarlo.
 drop policy if exists p_pred_sel on predictions;
 create policy p_pred_sel on predictions for select using (
-  auth.uid() = user_id or match_started(match_id) or is_admin()
+  auth.uid() = user_id or match_locked(match_id) or is_admin()
 );
 drop policy if exists p_pred_ins on predictions;
 create policy p_pred_ins on predictions for insert with check (

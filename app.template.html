@@ -493,7 +493,7 @@ function matchCard(m,highlight){
     <div class="cnt">
       <div class="left"><span class="dot ${m.finished?'gold':(locked?'red':'')}"></span>
         <span data-cnt="${m.id}">${countdownLabel(m)}</span></div>
-      ${started? `<button class="linkbtn" data-reveal="${m.id}">Ver pronósticos de todos</button>`:`<span style="color:var(--dim);font-size:11px">${p?'Guardado ✓':'Sin pronóstico'}</span>`}
+      ${locked? `<button class="linkbtn" data-reveal="${m.id}">Ver pronósticos de todos</button>`:`<span style="color:var(--dim);font-size:11px">${p?'Guardado ✓':'Sin pronóstico'}</span>`}
     </div>
     <div class="reveal" data-revbox="${m.id}"></div>
   </div>`;
@@ -508,7 +508,18 @@ function countdownLabel(m){
   return `Cierra en ${mi}m ${s}s`;
 }
 function tickCountdowns(){
-  MATCHES.forEach(m=>{ const el=document.querySelector(`[data-cnt="${m.id}"]`); if(el) el.textContent=countdownLabel(m); });
+  let needRerender=false;
+  MATCHES.forEach(m=>{
+    const el=document.querySelector(`[data-cnt="${m.id}"]`); if(el) el.textContent=countdownLabel(m);
+    // ¿este partido acaba de cruzar el momento de cierre mientras la página está abierta?
+    const card=document.querySelector(`.match[data-mid="${m.id}"]`);
+    if(card){
+      const lockedNow=isLocked(m);
+      const shownLocked=!!card.querySelector('[data-reveal]');
+      if(lockedNow!==shownLocked) needRerender=true;
+    }
+  });
+  if(needRerender && $('#viewPartidos').classList.contains('on')) renderPartidos();
 }
 
 function bindMatchInputs(scope){
@@ -519,7 +530,12 @@ function bindMatchInputs(scope){
         if(isLocked(m)){ toast('Este partido ya está cerrado','err'); return; }
         const hi=card.querySelector('[data-side="home"]'), ai=card.querySelector('[data-side="away"]');
         const hv=Math.max(0,Math.min(99,parseInt(hi.value||0))), av=Math.max(0,Math.min(99,parseInt(ai.value||0)));
-        hi.value=hv; ai.value=av;
+        // sincroniza TODAS las tarjetas de este mismo partido (ej. la de "Próximos partidos")
+        document.querySelectorAll(`.match[data-mid="${mid}"]`).forEach(c=>{
+          const h=c.querySelector('[data-side="home"]'), a=c.querySelector('[data-side="away"]');
+          if(h && h.value!=hv) h.value=hv; if(a && a.value!=av) a.value=av;
+          const note=c.querySelector('.cnt span:last-child'); if(note && !c.querySelector('[data-reveal]')) note.textContent='Guardado ✓';
+        });
         const { error } = await sb.from('predictions').upsert(
           { user_id:ME.id, match_id:mid, home_pred:hv, away_pred:av, updated_at:new Date().toISOString() },
           { onConflict:'user_id,match_id' });
@@ -537,7 +553,7 @@ async function revealOthers(mid,card){
   if(box.classList.contains('open')){ box.classList.remove('open'); return; }
   box.classList.add('open'); box.innerHTML='<div class="spinner"></div>';
   const { data, error } = await sb.from('predictions').select('home_pred,away_pred,points,profiles(username,nombre)').eq('match_id',mid);
-  if(error){ box.innerHTML='<div class="empty" style="padding:14px">Disponible cuando inicie el partido.</div>'; return; }
+  if(error){ box.innerHTML='<div class="empty" style="padding:14px">Disponible cuando se cierre el partido (10 min antes).</div>'; return; }
   if(!data.length){ box.innerHTML='<div class="empty" style="padding:14px">Nadie pronosticó este partido.</div>'; return; }
   box.innerHTML = `<h5>Pronósticos de la polla (${data.length})</h5>` +
     data.sort((a,b)=>(b.points||0)-(a.points||0)).map(r=>{
