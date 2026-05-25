@@ -14,12 +14,14 @@ if (!SB_URL || !SB_ANON) {
 
 let html = readFileSync(new URL('./app.template.html', import.meta.url), 'utf8');
 html = html.replaceAll('%%SUPABASE_URL%%', SB_URL).replaceAll('%%SUPABASE_ANON%%', SB_ANON);
+// El logo se sirve como archivo estático desde /logo.jpg
+html = html.replaceAll('%%LOGO_SRC%%', '/logo.jpg');
 
 mkdirSync(new URL('./dist/', import.meta.url), { recursive: true });
 writeFileSync(new URL('./dist/index.html', import.meta.url), html);
 
 // Copia archivos estáticos opcionales si existen
-for (const f of ['favicon.ico', 'robots.txt']) {
+for (const f of ['favicon.ico', 'robots.txt', 'logo.jpg']) {
   const src = new URL('./public/' + f, import.meta.url);
   if (existsSync(src)) copyFileSync(src, new URL('./dist/' + f, import.meta.url));
 }
