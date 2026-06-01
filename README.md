@@ -107,3 +107,14 @@ Las reglas (Row Level Security de Postgres) viven en Supabase: cada quien solo e
 Esta versión agrega en **Admin → Resultados** una vista por fecha para diligenciar marcadores día por día. También agrega un botón para **borrar resultados de simulación** y dejar el torneo como si ningún partido se hubiera jugado.
 
 Antes de usar el botón de reinicio, ejecuta en Supabase el SQL incluido en `parche-aprobacion-pagos-polla.sql` o el archivo `parche-reset-resultados-simulacion.sql`.
+
+
+## Actualización V3 · Aprobación, pagos y reinicio de simulación
+
+Antes de usar el botón **Borrar resultados de simulación**, ejecuta en Supabase el archivo:
+
+`parche-unico-aprobacion-pagos-reset-v3.sql`
+
+Esto crea la función segura `reset_tournament_results`, mantiene aprobación de participantes y control de pagos, y permite reiniciar marcadores/puntos de prueba sin borrar usuarios ni pronósticos.
+
+El panel **Admin → Resultados** muestra los partidos agrupados por fecha para diligenciarlos día por día.
