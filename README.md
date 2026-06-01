@@ -101,3 +101,9 @@ Las reglas (Row Level Security de Postgres) viven en Supabase: cada quien solo e
 ├── .env.example          # plantilla de variables (no subir .env.local)
 └── .gitignore
 ```
+
+## Actualización: reinicio de simulación y resultados por fecha
+
+Esta versión agrega en **Admin → Resultados** una vista por fecha para diligenciar marcadores día por día. También agrega un botón para **borrar resultados de simulación** y dejar el torneo como si ningún partido se hubiera jugado.
+
+Antes de usar el botón de reinicio, ejecuta en Supabase el SQL incluido en `parche-aprobacion-pagos-polla.sql` o el archivo `parche-reset-resultados-simulacion.sql`.

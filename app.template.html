@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e14">
-<title>Polla Mundilista 2026 ⚽</title>
-<link rel="icon" type="image/jpeg" href="%%LOGO_SRC%%">
+<title>Polla Mundial 2026 ⚽ Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,12 +12,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
-  --bg:#0a1430; --bg2:#0c1838; --panel:#122149; --panel2:#16285a; --line:#27396e;
-  --txt:#eef2fb; --mut:#9fb0d4; --dim:#6c7eaa;
-  --gold:#f4c343; --gold2:#ffe08a; --teal:#19e3c2; --lime:#b6f24a;
-  --coral:#e23b4e; --blue:#2f6df0; --green:#1ca85a; --violet:#9d7bff;
-  --grad:linear-gradient(120deg,#f4c343,#ffe08a 50%,#f4c343);
-  --grad-host:linear-gradient(120deg,#2f6df0,#e23b4e 50%,#1ca85a);
+  --bg:#0a0e14; --bg2:#0f1219; --panel:#121925; --panel2:#171f2e; --line:#243049;
+  --txt:#eef3fb; --mut:#8c9bb5; --dim:#5d6b85;
+  --teal:#19e3c2; --lime:#b6f24a; --gold:#ffcf4d; --coral:#ff5d6c; --blue:#4d8bff; --violet:#9d7bff;
+  --grad:linear-gradient(120deg,#19e3c2,#b6f24a 55%,#ffcf4d);
   --radius:18px; --shadow:0 18px 50px -22px rgba(0,0,0,.85);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -26,29 +23,23 @@ html,body{margin:0;padding:0}
 body{
   font-family:Manrope,system-ui,sans-serif; background:var(--bg); color:var(--txt);
   min-height:100dvh; overflow-x:hidden;
-  background-image:radial-gradient(1100px 560px at 78% -8%,rgba(244,195,67,.12),transparent 60%),
-    radial-gradient(900px 520px at 8% 4%,rgba(47,109,240,.14),transparent 55%),
-    radial-gradient(700px 600px at 50% 110%,rgba(226,59,78,.08),transparent 60%);
+  background-image:radial-gradient(1100px 560px at 78% -8%,rgba(25,227,194,.10),transparent 60%),
+    radial-gradient(900px 520px at 8% 4%,rgba(157,123,255,.10),transparent 55%),
+    radial-gradient(700px 600px at 50% 110%,rgba(255,207,77,.06),transparent 60%);
 }
 .app-wrap{max-width:560px;margin:0 auto;padding:0 14px calc(96px + env(safe-area-inset-bottom)) 14px}
 h1,h2,h3{margin:0;font-family:Archivo,sans-serif;letter-spacing:-.02em}
 .display{font-family:Anton,sans-serif;letter-spacing:.01em;font-weight:400}
 button{font-family:inherit;cursor:pointer;border:none}
 input,select{font-family:inherit}
-a{color:var(--gold)}
+a{color:var(--teal)}
 .gradtext{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* ---------- top bar ---------- */
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;
   padding:14px 2px 12px;background:linear-gradient(180deg,var(--bg) 55%,transparent);backdrop-filter:blur(6px)}
 .logo{display:flex;align-items:center;gap:9px;font-family:Anton;font-size:20px;letter-spacing:.02em}
-.logo .ball{width:30px;height:30px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#1a1205;font-size:17px;box-shadow:0 6px 20px -6px var(--teal)}
-.logo-badge{border-radius:50%;object-fit:cover;background:#0a1430;flex:none}
-.logo-badge.sm{width:34px;height:34px;border:2px solid var(--gold);box-shadow:0 4px 14px -4px rgba(244,195,67,.6)}
-.logo-badge.xl{width:128px;height:128px;border:3px solid var(--gold);
-  box-shadow:0 16px 44px -12px rgba(244,195,67,.55),0 0 0 6px rgba(244,195,67,.08);
-  animation:badgeIn .6s cubic-bezier(.2,.9,.3,1.3)}
-@keyframes badgeIn{from{opacity:0;transform:scale(.82) translateY(8px)}to{opacity:1;transform:none}}
+.logo .ball{width:30px;height:30px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#06210f;font-size:17px;box-shadow:0 6px 20px -6px var(--teal)}
 .topbar .sp{flex:1}
 .iconbtn{position:relative;width:42px;height:42px;border-radius:13px;background:var(--panel);border:1px solid var(--line);
   display:grid;place-items:center;font-size:18px;color:var(--txt);transition:.15s}
@@ -63,7 +54,7 @@ a{color:var(--gold)}
   text-transform:uppercase;color:var(--mut);font-weight:800}
 .section-title::before{content:"";width:18px;height:3px;border-radius:3px;background:var(--grad)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:13px;
-  font-weight:800;font-size:15px;background:var(--grad);color:#1a1205;transition:.15s;width:100%}
+  font-weight:800;font-size:15px;background:var(--grad);color:#06210f;transition:.15s;width:100%}
 .btn:active{transform:scale(.98)}
 .btn.ghost{background:var(--panel);color:var(--txt);border:1px solid var(--line)}
 .btn.coral{background:linear-gradient(120deg,#ff5d6c,#ff8a4d);color:#2a0608}
@@ -72,7 +63,7 @@ a{color:var(--gold)}
 .field label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin-bottom:6px;letter-spacing:.04em}
 .field input,.field select{width:100%;padding:13px 14px;border-radius:12px;background:var(--bg2);border:1px solid var(--line);
   color:var(--txt);font-size:15px;outline:none;transition:.15s}
-.field input:focus,.field select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(244,195,67,.16)}
+.field input:focus,.field select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(25,227,194,.13)}
 .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;
   background:rgba(255,255,255,.06);color:var(--mut);border:1px solid var(--line)}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);z-index:200;
@@ -91,7 +82,7 @@ a{color:var(--gold)}
   font-size:40px;box-shadow:0 14px 40px -10px var(--teal)}
 .tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:5px;margin-bottom:18px;gap:4px}
 .tabs button{flex:1;padding:11px;border-radius:10px;background:transparent;color:var(--mut);font-weight:800;font-size:14px;transition:.15s}
-.tabs button.on{background:var(--grad);color:#1a1205}
+.tabs button.on{background:var(--grad);color:#06210f}
 
 /* ---------- match card ---------- */
 .match{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:16px;
@@ -109,12 +100,12 @@ a{color:var(--gold)}
 .scorebox input{width:46px;height:46px;text-align:center;font-size:21px;font-weight:800;border-radius:12px;
   background:var(--bg2);border:1.5px solid var(--line);color:var(--txt);outline:none;transition:.15s;font-family:Archivo;-moz-appearance:textfield}
 .scorebox input::-webkit-outer-spin-button,.scorebox input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.scorebox input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(244,195,67,.18)}
+.scorebox input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(25,227,194,.14)}
 .scorebox input:disabled{opacity:.7;color:var(--mut)}
 .scorebox .vs{color:var(--dim);font-weight:800;font-size:13px}
 .cnt{margin-top:11px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;font-weight:700}
 .cnt .left{display:flex;align-items:center;gap:6px;color:var(--mut)}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 9px var(--gold)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 9px var(--teal)}
 .dot.red{background:var(--coral);box-shadow:0 0 9px var(--coral)}
 .dot.gold{background:var(--gold);box-shadow:0 0 9px var(--gold)}
 .ptbadge{font-weight:900;font-size:12px;padding:4px 9px;border-radius:9px;font-family:Archivo}
@@ -128,12 +119,12 @@ a{color:var(--gold)}
 .reveal h5{margin:0 0 7px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
 .rev-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:4px 0;color:var(--mut)}
 .rev-row b{color:var(--txt);font-family:Archivo}
-.linkbtn{background:none;color:var(--gold);font-weight:700;font-size:12px;padding:0;text-decoration:underline}
+.linkbtn{background:none;color:var(--teal);font-weight:700;font-size:12px;padding:0;text-decoration:underline}
 
 /* ---------- leaderboard ---------- */
 .lbrow{display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:14px;margin-bottom:8px;
   background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line)}
-.lbrow.me{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 10px 30px -16px rgba(244,195,67,.5)}
+.lbrow.me{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal),0 10px 30px -16px var(--teal)}
 .rank{font-family:Anton;font-size:20px;width:34px;text-align:center;color:var(--dim)}
 .rank.g1{color:var(--gold)} .rank.g2{color:#cfd8e6} .rank.g3{color:#e0935a}
 .lb-name{flex:1;min-width:0}
@@ -157,7 +148,7 @@ a{color:var(--gold)}
 /* ---------- notifications ---------- */
 .notif{display:flex;gap:12px;padding:13px 14px;border-radius:14px;margin-bottom:8px;
   background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line)}
-.notif.unread{border-color:var(--gold)}
+.notif.unread{border-color:var(--teal)}
 .notif .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:18px;flex:none;background:var(--bg2)}
 .notif .ic.match{color:var(--blue)} .notif .ic.result{color:var(--gold)} .notif .ic.admin{color:var(--violet)} .notif .ic.info{color:var(--teal)}
 .notif .body{flex:1;min-width:0}
@@ -177,7 +168,7 @@ a{color:var(--gold)}
 .adm-tabs::-webkit-scrollbar{display:none}
 .adm-tabs button{flex:none;padding:9px 14px;border-radius:11px;background:var(--panel);border:1px solid var(--line);
   color:var(--mut);font-weight:800;font-size:13px;white-space:nowrap}
-.adm-tabs button.on{background:var(--grad);color:#1a1205}
+.adm-tabs button.on{background:var(--grad);color:#06210f}
 .adm-match{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
 .adm-match .nm2{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .adm-match input{width:42px;height:38px;text-align:center;font-weight:800;border-radius:9px;background:var(--bg2);
@@ -194,8 +185,8 @@ a{color:var(--gold)}
 .navbtn{flex:1;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--dim);
   font-size:10px;font-weight:800;letter-spacing:.02em;transition:.15s;position:relative}
 .navbtn .gi{font-size:21px;line-height:1}
-.navbtn.on{color:var(--gold)}
-.navbtn.on .gi{filter:drop-shadow(0 0 10px rgba(244,195,67,.6))}
+.navbtn.on{color:var(--teal)}
+.navbtn.on .gi{filter:drop-shadow(0 0 10px rgba(25,227,194,.6))}
 .navbtn .ndot{position:absolute;top:2px;right:50%;margin-right:-16px;width:8px;height:8px;border-radius:50%;background:var(--coral)}
 
 .view{display:none;animation:fade .3s ease} .view.on{display:block}
@@ -209,7 +200,7 @@ a{color:var(--gold)}
   width:100%;max-width:560px;padding:22px 18px calc(26px + env(safe-area-inset-bottom));box-shadow:var(--shadow);animation:slideup .3s}
 @keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
 .modal h3{font-size:19px;margin-bottom:16px}
-.spinner{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;
+.spinner{width:30px;height:30px;border:3px solid var(--line);border-top-color:var(--teal);border-radius:50%;
   animation:spin .7s linear infinite;margin:34px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 .cfg-warn{background:rgba(255,93,108,.1);border:1px solid var(--coral);border-radius:14px;padding:14px;margin:14px 0;font-size:13px;color:#ffd2d6;line-height:1.5}
@@ -221,8 +212,8 @@ small.hint{display:block;color:var(--dim);font-size:11.5px;margin-top:6px;line-h
 <!-- ============ AUTH SCREEN ============ -->
 <div id="authScreen" class="auth">
   <div class="hero">
-    <img class="logo-badge xl" src="%%LOGO_SRC%%" alt="Polla Mundilista 2026">
-    <div class="big">POLLA<br><span class="gradtext">MUNDILISTA 2026</span></div>
+    <div class="ball-xl">⚽</div>
+    <div class="big">POLLA<br><span class="gradtext">MUNDIAL 2026</span></div>
     <p>Predice · Compite · Gana la gloria</p>
   </div>
   <div id="cfgWarn"></div>
@@ -249,7 +240,7 @@ small.hint{display:block;color:var(--dim);font-size:11.5px;margin-top:6px;line-h
 <div id="app" style="display:none">
   <div class="app-wrap">
     <div class="topbar">
-      <div class="logo"><img class="logo-badge sm" src="%%LOGO_SRC%%" alt=""> <span>POLLA <span class="gradtext">MUNDILISTA</span></span></div>
+      <div class="logo"><span class="ball">⚽</span> <span>POLLA <span class="gradtext">2026</span></span></div>
       <div class="sp"></div>
       <button class="iconbtn" id="btnBell">🔔<span class="badge" id="bellBadge" style="display:none">0</span></button>
     </div>
@@ -272,9 +263,9 @@ small.hint{display:block;color:var(--dim);font-size:11.5px;margin-top:6px;line-h
    CONFIGURACIÓN — pega aquí los datos de TU proyecto Supabase
    (Supabase → Project Settings → Data API / API Keys)
    ════════════════════════════════════════════════════════════════════════ */
-const SUPABASE_URL  = "%%SUPABASE_URL%%";   // inyectado por Vercel en el build
-const SUPABASE_ANON = "%%SUPABASE_ANON%%";  // inyectado por Vercel en el build
-const EMAIL_DOMAIN  = "polla.local";        // dominio interno para los usuarios (no necesita ser real)
+const SUPABASE_URL  = "PEGA_AQUI_TU_PROJECT_URL";      // ej: https://abcdxyz.supabase.co
+const SUPABASE_ANON = "PEGA_AQUI_TU_ANON_PUBLIC_KEY";  // la clave "anon public" (es segura para el navegador)
+const EMAIL_DOMAIN  = "polla.local";                    // dominio interno para los usuarios (no necesita ser real)
 /* ════════════════════════════════════════════════════════════════════════ */
 </script>
 <script>
@@ -561,13 +552,8 @@ function tickCountdowns(){
   let needRerender=false;
   MATCHES.forEach(m=>{
     const el=document.querySelector(`[data-cnt="${m.id}"]`); if(el) el.textContent=countdownLabel(m);
-    // ¿este partido acaba de cruzar el momento de cierre mientras la página está abierta?
     const card=document.querySelector(`.match[data-mid="${m.id}"]`);
-    if(card){
-      const lockedNow=isLocked(m);
-      const shownLocked=!!card.querySelector('[data-reveal]');
-      if(lockedNow!==shownLocked) needRerender=true;
-    }
+    if(card){ const lockedNow=isLocked(m); const shownLocked=!!card.querySelector('[data-reveal]'); if(lockedNow!==shownLocked) needRerender=true; }
   });
   if(needRerender && $('#viewPartidos').classList.contains('on')) renderPartidos();
 }
@@ -580,7 +566,6 @@ function bindMatchInputs(scope){
         if(isLocked(m)){ toast('Este partido ya está cerrado','err'); return; }
         const hi=card.querySelector('[data-side="home"]'), ai=card.querySelector('[data-side="away"]');
         const hv=Math.max(0,Math.min(99,parseInt(hi.value||0))), av=Math.max(0,Math.min(99,parseInt(ai.value||0)));
-        // sincroniza TODAS las tarjetas de este mismo partido (ej. la de "Próximos partidos")
         document.querySelectorAll(`.match[data-mid="${mid}"]`).forEach(c=>{
           const h=c.querySelector('[data-side="home"]'), a=c.querySelector('[data-side="away"]');
           if(h && h.value!=hv) h.value=hv; if(a && a.value!=av) a.value=av;
@@ -624,7 +609,7 @@ function renderTabla(){
     const medal = rk===1?'🥇':rk===2?'🥈':rk===3?'🥉':rk;
     html+=`<div class="lbrow ${me?'me':''}">
       <div class="rank ${g}">${medal}</div>
-      <div class="lb-name"><div class="n">${esc(r.nombre)} ${me?'<span class="pill" style="color:var(--gold)">tú</span>':''}</div>
+      <div class="lb-name"><div class="n">${esc(r.nombre)} ${me?'<span class="pill" style="color:var(--teal)">tú</span>':''}</div>
         <div class="u">@${esc(r.username)} · ${r.exactos} exactos · ${r.bonus_points} bonus</div></div>
       <div class="lb-pts"><div class="p">${r.total_points}</div><div class="s">PUNTOS</div></div>
     </div>`;
@@ -912,17 +897,53 @@ async function saveUserAdmin(uid,row,b){
 }
 
 function admResults(b){
-  const pending=MATCHES.filter(m=>now()>=new Date(m.kickoff));
-  b.innerHTML=`<div class="card"><small class="hint" style="margin:0 0 12px">Ingresa el marcador final. Al guardar, los puntos de TODOS se recalculan automáticamente en el servidor y se envía un aviso.</small>
-    ${pending.length?'':'<div class="empty">Aún no hay partidos jugados.</div>'}
-    ${pending.map(m=>`<div class="adm-match" data-am="${m.id}">
-      <img class="flag" src="${flagUrl(m.home_team)}"><span class="nm2">${esc(m.home_team)}</span>
-      <input type="number" min="0" data-s="h" value="${m.home_score??''}">
-      <span style="color:var(--dim)">-</span>
-      <input type="number" min="0" data-s="a" value="${m.away_score??''}">
-      <span class="nm2" style="text-align:right">${esc(m.away_team)}</span><img class="flag" src="${flagUrl(m.away_team)}">
-      <button class="btn sm" data-save="${m.id}">✓</button></div>`).join('')}
-  </div>`;
+  const all = [...MATCHES].sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));
+  const dateKey = d => new Date(d).toLocaleDateString('en-CA',{timeZone:'America/Bogota'});
+  const dateLabel = k => new Date(k+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const groups = {};
+  all.forEach(m=>{ const k=dateKey(m.kickoff); (groups[k]=groups[k]||[]).push(m); });
+  const keys = Object.keys(groups).sort();
+  const todayKey = dateKey(now());
+  const firstPending = all.find(m=>now()>=new Date(m.kickoff) && !m.finished);
+  const selected = window._admResultDate && groups[window._admResultDate]
+    ? window._admResultDate
+    : (firstPending ? dateKey(firstPending.kickoff) : (keys.includes(todayKey) ? todayKey : keys[0]));
+  window._admResultDate = selected;
+  const shown = groups[selected] || [];
+  const finishedCount = all.filter(m=>m.finished).length;
+  const scoredCount = all.filter(m=>m.home_score!=null && m.away_score!=null).length;
+
+  b.innerHTML=`<div class="card" style="margin-bottom:12px">
+      <h3 style="font-size:15px;margin-bottom:8px">Resultados por fecha</h3>
+      <small class="hint" style="margin:0 0 12px">Escoge una fecha para diligenciar o revisar los partidos de ese día. Al guardar un marcador, los puntos de todos se recalculan automáticamente.</small>
+      <div class="field" style="margin-bottom:10px"><label>Fecha de partidos</label><select id="adm_result_date">
+        ${keys.map(k=>`<option value="${k}" ${k===selected?'selected':''}>${dateLabel(k)} · ${groups[k].length} partido(s)</option>`).join('')}
+      </select></div>
+      <small class="hint" style="margin:0">Partidos con resultado: <b>${scoredCount}</b> · Finalizados: <b>${finishedCount}</b> · Total: <b>${all.length}</b></small>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+        <h3 style="font-size:15px">${dateLabel(selected||todayKey)}</h3>
+        <span class="pill">${shown.length} partido(s)</span>
+      </div>
+      ${shown.length?'':'<div class="empty">No hay partidos en esta fecha.</div>'}
+      ${shown.map(m=>`<div class="adm-match" data-am="${m.id}" style="align-items:center">
+        <div style="min-width:42px;font-size:11px;color:var(--dim);font-weight:800">${new Date(m.kickoff).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</div>
+        <img class="flag" src="${flagUrl(m.home_team)}"><span class="nm2">${esc(m.home_team)}</span>
+        <input type="number" min="0" data-s="h" value="${m.home_score??''}" placeholder="–">
+        <span style="color:var(--dim)">-</span>
+        <input type="number" min="0" data-s="a" value="${m.away_score??''}" placeholder="–">
+        <span class="nm2" style="text-align:right">${esc(m.away_team)}</span><img class="flag" src="${flagUrl(m.away_team)}">
+        <button class="btn sm" data-save="${m.id}">✓</button>
+      </div>`).join('')}
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:8px">🧪 Limpiar resultados de prueba</h3>
+      <small class="hint" style="margin:0 0 12px">Úsalo después de ensayar en modo simulación. Deja todos los partidos como no jugados, borra marcadores oficiales, puntos calculados y resultados bonus. No borra usuarios ni pronósticos.</small>
+      <button class="btn coral" id="adm_reset_results">Borrar resultados de simulación</button>
+    </div>`;
+  const sel=$('#adm_result_date');
+  if(sel) sel.onchange=()=>{ window._admResultDate=sel.value; admResults(b); };
   b.querySelectorAll('[data-save]').forEach(btn=>btn.onclick=async()=>{
     const row=btn.closest('[data-am]'); const mid=+row.dataset.am;
     const h=parseInt(row.querySelector('[data-s="h"]').value), a=parseInt(row.querySelector('[data-s="a"]').value);
@@ -934,6 +955,19 @@ function admResults(b){
     toast('Resultado guardado y puntos recalculados ✓','ok');
     await refreshLight(); renderAdmin();
   });
+  const resetBtn=$('#adm_reset_results');
+  if(resetBtn) resetBtn.onclick=async()=>{
+    if(!confirm('Esto borrará TODOS los resultados oficiales cargados, puntos calculados y resultados bonus. No borra usuarios ni pronósticos. ¿Continuar?')) return;
+    resetBtn.textContent='Limpiando…'; resetBtn.disabled=true;
+    const { error } = await sb.rpc('reset_tournament_results', { clear_result_notifications: true });
+    resetBtn.disabled=false; resetBtn.textContent='Borrar resultados de simulación';
+    if(error) return toast('No se pudo limpiar. Ejecuta el parche SQL nuevo en Supabase.','err');
+    await sb.from('config').update({sim_now:null}).eq('id',1);
+    CONFIG.sim_now=null;
+    await loadAll();
+    toast('Resultados de simulación borrados ✓','ok');
+    renderAdmin(); renderAll();
+  };
 }
 function admKnockout(b){
   const opts=`<option value="">—</option>`+TEAMS.map(t=>`<option>${esc(t.name)}</option>`).join('');
@@ -1013,8 +1047,12 @@ function admConfig(b){
     <h3 style="font-size:15px;margin-bottom:8px">🧪 Modo simulación</h3>
     <small class="hint" style="margin:0 0 10px">Fija una "hora actual" falsa para probar el bloqueo de partidos antes de junio. Déjalo vacío para usar la hora real.</small>
     <div class="field"><label>Hora simulada</label><input id="cf_sim" type="datetime-local" value="${dt(c.sim_now)}"></div>
-    <div style="display:flex;gap:8px"><button class="btn sm" id="cf_sim_save">Activar simulación</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" id="cf_sim_save">Activar simulación</button>
       <button class="btn sm ghost" id="cf_sim_clear">Usar hora real</button></div>
+    <div class="divider"></div>
+    <h3 style="font-size:15px;margin-bottom:8px">🧹 Reiniciar resultados de prueba</h3>
+    <small class="hint" style="margin:0 0 10px">Borra marcadores oficiales cargados en simulación, deja los partidos como no jugados y reinicia puntos calculados. No elimina usuarios ni pronósticos.</small>
+    <button class="btn coral" id="cf_reset_results">Borrar resultados y dejar torneo en cero</button>
   </div>`;
   $('#cf_save').onclick=async()=>{
     const { error }=await sb.from('config').update({lock_minutes:+$('#cf_lock').value,pts_exact:+$('#cf_ex').value,
@@ -1031,6 +1069,17 @@ function admConfig(b){
   $('#cf_sim_clear').onclick=async()=>{
     await sb.from('config').update({sim_now:null}).eq('id',1); CONFIG.sim_now=null;
     toast('Usando hora real ✓','ok'); renderPartidos();
+  };
+  $('#cf_reset_results').onclick=async()=>{
+    if(!confirm('Esto borrará TODOS los resultados oficiales cargados, puntos calculados y resultados bonus. No borra usuarios ni pronósticos. ¿Continuar?')) return;
+    const btn=$('#cf_reset_results'); btn.textContent='Limpiando…'; btn.disabled=true;
+    const { error } = await sb.rpc('reset_tournament_results', { clear_result_notifications: true });
+    btn.disabled=false; btn.textContent='Borrar resultados y dejar torneo en cero';
+    if(error) return toast('No se pudo limpiar. Ejecuta el parche SQL nuevo en Supabase.','err');
+    await sb.from('config').update({sim_now:null}).eq('id',1); CONFIG.sim_now=null;
+    await loadAll();
+    toast('Resultados borrados ✓','ok');
+    renderAll();
   };
 }
 
