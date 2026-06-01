@@ -118,3 +118,12 @@ Antes de usar el botón **Borrar resultados de simulación**, ejecuta en Supabas
 Esto crea la función segura `reset_tournament_results`, mantiene aprobación de participantes y control de pagos, y permite reiniciar marcadores/puntos de prueba sin borrar usuarios ni pronósticos.
 
 El panel **Admin → Resultados** muestra los partidos agrupados por fecha para diligenciarlos día por día.
+
+
+## Parche V4: reiniciar resultados de simulación
+
+Si el botón **Borrar resultados de simulación** muestra error, ejecuta en Supabase el archivo:
+
+`parche-reset-resultados-v4.sql`
+
+Este parche crea la función `reset_tournament_results_v4()`, reinicia marcadores, puntos y bonus, apaga el modo simulación y no borra usuarios, pagos ni pronósticos.

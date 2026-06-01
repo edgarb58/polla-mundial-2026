@@ -968,9 +968,9 @@ function admResults(b){
   if(resetBtn) resetBtn.onclick=async()=>{
     if(!confirm('Esto borrará TODOS los resultados oficiales cargados, puntos calculados y resultados bonus. No borra usuarios ni pronósticos. ¿Continuar?')) return;
     resetBtn.textContent='Limpiando…'; resetBtn.disabled=true;
-    const { error } = await sb.rpc('reset_tournament_results', { clear_result_notifications: true });
+    const { error } = await sb.rpc('reset_tournament_results_v4');
     resetBtn.disabled=false; resetBtn.textContent='Borrar resultados de simulación';
-    if(error) return toast('No se pudo limpiar. Ejecuta primero el parche SQL V3 en Supabase.','err');
+    if(error) return toast('No se pudo limpiar: ' + (error.message || 'ejecuta el parche SQL V4 en Supabase'),'err');
     await sb.from('config').update({sim_now:null}).eq('id',1);
     CONFIG.sim_now=null;
     await loadAll();
@@ -1082,9 +1082,9 @@ function admConfig(b){
   $('#cf_reset_results').onclick=async()=>{
     if(!confirm('Esto borrará TODOS los resultados oficiales cargados, puntos calculados y resultados bonus. No borra usuarios ni pronósticos. ¿Continuar?')) return;
     const btn=$('#cf_reset_results'); btn.textContent='Limpiando…'; btn.disabled=true;
-    const { error } = await sb.rpc('reset_tournament_results', { clear_result_notifications: true });
+    const { error } = await sb.rpc('reset_tournament_results_v4');
     btn.disabled=false; btn.textContent='Borrar resultados y dejar torneo en cero';
-    if(error) return toast('No se pudo limpiar. Ejecuta primero el parche SQL V3 en Supabase.','err');
+    if(error) return toast('No se pudo limpiar: ' + (error.message || 'ejecuta el parche SQL V4 en Supabase'),'err');
     await sb.from('config').update({sim_now:null}).eq('id',1); CONFIG.sim_now=null;
     await loadAll();
     toast('Resultados borrados ✓','ok');
