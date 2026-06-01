@@ -4,6 +4,7 @@ App web para administrar una polla (quiniela) del Mundial 2026 con +100 particip
 **Frontend** estático en **Vercel** · **Backend** (base de datos, login, tiempo real y seguridad) en **Supabase** · **Código** versionado en **GitHub** con despliegue automático.
 
 - Registro con usuario y contraseña (nombre, cédula, teléfono).
+- Panel Admin para **aprobar participantes** y controlar pagos: debe, saldo pendiente o pagado.
 - Pronósticos de marcador que se **bloquean en el servidor** 10 min antes de cada partido.
 - Puntaje automático: 6 (exacto) / 3 (resultado) / 1 (parcial). Bonus de goleador y Top 4.
 - Tabla de posiciones, **notificaciones en tiempo real** y **estadísticas con gráficas**.
@@ -67,6 +68,9 @@ Las llaves **nunca** se guardan en el código: se configuran en Vercel y el scri
 
 ---
 
+### Actualizar una base Supabase existente
+Si ya habías creado el proyecto antes de esta versión, no vuelvas a borrar la base. Ejecuta primero [`parche-aprobacion-pagos-polla.sql`](./parche-aprobacion-pagos-polla.sql) en **SQL Editor → New query**. Luego sube el nuevo código a GitHub y Vercel redesplegará la app.
+
 ## 🖥️ Probar en local (opcional)
 
 ```bash
@@ -78,11 +82,11 @@ npm run dev                     # construye e inicia un servidor local
 
 ## 🎮 Administración durante el Mundial
 
-Desde **🛠️ Admin**: cargar resultados (recalcula puntos de todos y notifica), publicar cruces de eliminatorias, registrar el goleador y Top 4 oficiales, enviar avisos, ajustar puntajes/fechas y un **modo simulación** para probar el bloqueo de partidos antes de junio.
+Desde **🛠️ Admin**: aprobar participantes, controlar pagos, cargar resultados (recalcula puntos de todos y notifica), publicar cruces de eliminatorias, registrar el goleador y Top 4 oficiales, enviar avisos, ajustar puntajes/fechas y un **modo simulación** para probar el bloqueo de partidos antes de junio.
 
 ## 🔐 Seguridad
 
-Las reglas (Row Level Security de Postgres) viven en Supabase: cada quien solo escribe sus pronósticos y solo antes del cierre, nadie ve los ajenos hasta que arranca el partido, el puntaje lo calcula el servidor y nadie puede auto-nombrarse admin. La *anon key* es pública por diseño; lo que protege los datos es la RLS, no esconder la llave.
+Las reglas (Row Level Security de Postgres) viven en Supabase: cada quien solo escribe sus pronósticos y solo antes del cierre, los usuarios pendientes no pueden pronosticar hasta aprobación del admin, nadie ve los ajenos hasta que el partido se cierre, el puntaje lo calcula el servidor y nadie puede auto-nombrarse admin ni cambiar su estado de pago. La *anon key* es pública por diseño; lo que protege los datos es la RLS, no esconder la llave.
 
 ## 📁 Estructura
 
@@ -91,6 +95,7 @@ Las reglas (Row Level Security de Postgres) viven en Supabase: cada quien solo e
 ├── app.template.html     # la app (con placeholders de las llaves)
 ├── build.mjs             # inyecta las variables de entorno → dist/index.html
 ├── supabase-setup.sql    # esquema + seguridad + datos del Mundial
+├── parche-aprobacion-pagos-polla.sql # migración para bases ya creadas
 ├── vercel.json           # configuración de build de Vercel
 ├── package.json
 ├── .env.example          # plantilla de variables (no subir .env.local)

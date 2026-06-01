@@ -32,6 +32,12 @@ create table if not exists config (
 );
 insert into config (id) values (1) on conflict (id) do nothing;
 
+-- Registro de migraciones internas de la app
+create table if not exists app_migrations (
+  key text primary key,
+  applied_at timestamptz not null default now()
+);
+
 -- Perfiles (extiende auth.users)
 create table if not exists profiles (
   id        uuid primary key references auth.users(id) on delete cascade,
@@ -40,6 +46,14 @@ create table if not exists profiles (
   cedula    text,
   telefono  text,
   is_admin  boolean not null default false,
+  approval_status text not null default 'pending' check (approval_status in ('pending','approved','rejected')),
+  payment_status  text not null default 'debe' check (payment_status in ('debe','saldo_pendiente','pagado')),
+  amount_due       numeric(12,2) not null default 0,
+  amount_paid      numeric(12,2) not null default 0,
+  payment_note     text,
+  approved_at      timestamptz,
+  approved_by      uuid references profiles(id),
+  payment_updated_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -191,13 +205,20 @@ create trigger trg_recompute_bonus
 create or replace function handle_new_user() returns trigger
 language plpgsql security definer as $$
 begin
-  insert into profiles (id, username, nombre, cedula, telefono)
+  insert into profiles (
+    id, username, nombre, cedula, telefono,
+    approval_status, payment_status, amount_due, amount_paid
+  )
   values (
     NEW.id,
     coalesce(NEW.raw_user_meta_data->>'username', split_part(NEW.email,'@',1)),
     coalesce(NEW.raw_user_meta_data->>'nombre', ''),
     NEW.raw_user_meta_data->>'cedula',
-    NEW.raw_user_meta_data->>'telefono'
+    NEW.raw_user_meta_data->>'telefono',
+    'pending',
+    'debe',
+    0,
+    0
   );
   return NEW;
 end; $$;
@@ -226,13 +247,20 @@ language sql stable security definer as $$
   select coalesce((select is_admin from profiles where id = auth.uid()), false);
 $$;
 
--- PROFILES: todos leen (para la tabla de posiciones); editas solo el tuyo;
--- NADIE puede auto-otorgarse is_admin (esa columna solo la cambia un admin).
+-- atajo: ¿el usuario actual está aprobado o es admin?
+create or replace function is_participant_approved(u uuid default auth.uid()) returns boolean
+language sql stable security definer as $$
+  select coalesce((
+    select p.is_admin or p.approval_status = 'approved'
+    from profiles p
+    where p.id = u
+  ), false);
+$$;
+
+-- PROFILES: todos leen (para tabla/ranking); solo admin modifica aprobación y pagos.
 drop policy if exists p_profiles_sel on profiles;
 create policy p_profiles_sel on profiles for select using (true);
 drop policy if exists p_profiles_upd on profiles;
-create policy p_profiles_upd on profiles for update using (auth.uid() = id)
-  with check (auth.uid() = id and is_admin = (select is_admin from profiles where id = auth.uid()));
 drop policy if exists p_profiles_admin on profiles;
 create policy p_profiles_admin on profiles for all using (is_admin()) with check (is_admin());
 
@@ -264,13 +292,13 @@ create policy p_pred_sel on predictions for select using (
 );
 drop policy if exists p_pred_ins on predictions;
 create policy p_pred_ins on predictions for insert with check (
-  auth.uid() = user_id and not match_locked(match_id)
+  auth.uid() = user_id and is_participant_approved(user_id) and not match_locked(match_id)
 );
 drop policy if exists p_pred_upd on predictions;
 create policy p_pred_upd on predictions for update using (
-  auth.uid() = user_id and not match_locked(match_id)
+  auth.uid() = user_id and is_participant_approved(user_id) and not match_locked(match_id)
 ) with check (
-  auth.uid() = user_id and not match_locked(match_id)
+  auth.uid() = user_id and is_participant_approved(user_id) and not match_locked(match_id)
 );
 
 -- BONUS: ver propios siempre; ajenos solo tras el cierre. Editar antes del cierre.
@@ -280,10 +308,10 @@ create policy p_bonus_sel on bonus_predictions for select using (
   or effective_now() >= (select top4_deadline from config where id=1)
 );
 drop policy if exists p_bonus_ins on bonus_predictions;
-create policy p_bonus_ins on bonus_predictions for insert with check (auth.uid() = user_id);
+create policy p_bonus_ins on bonus_predictions for insert with check (auth.uid() = user_id and is_participant_approved(user_id));
 drop policy if exists p_bonus_upd on bonus_predictions;
-create policy p_bonus_upd on bonus_predictions for update using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+create policy p_bonus_upd on bonus_predictions for update using (auth.uid() = user_id and is_participant_approved(user_id))
+  with check (auth.uid() = user_id and is_participant_approved(user_id));
 
 drop policy if exists p_bonus_off_sel on bonus_official;
 create policy p_bonus_off_sel on bonus_official for select using (true);
@@ -318,6 +346,7 @@ create or replace view leaderboard as
   from profiles p
   left join predictions pr on pr.user_id = p.id
   left join bonus_predictions b on b.user_id = p.id
+  where p.is_admin = true or p.approval_status = 'approved'
   group by p.id, p.username, p.nombre;
 
 grant select on leaderboard to anon, authenticated;
