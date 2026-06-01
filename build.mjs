@@ -3,8 +3,11 @@
 // y escribe el sitio final en dist/index.html.
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
 
-const SB_URL  = process.env.SUPABASE_URL  || process.env.NEXT_PUBLIC_SUPABASE_URL  || '';
-const SB_ANON = process.env.SUPABASE_ANON || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_URL  = 'https://yomknpkcpppycsuwrobs.supabase.co';
+const DEFAULT_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvbWtucGtjcHBweWNzdXdyb2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzIxNzYsImV4cCI6MjA5NTA0ODE3Nn0.iztJXgtO42XVeoH0AdYmX3f72GxUlRomJeEQaFJKE1M';
+
+const SB_URL  = process.env.SUPABASE_URL  || process.env.NEXT_PUBLIC_SUPABASE_URL  || DEFAULT_SUPABASE_URL;
+const SB_ANON = process.env.SUPABASE_ANON || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON;
 
 if (!SB_URL || !SB_ANON) {
   console.warn('⚠  Faltan SUPABASE_URL / SUPABASE_ANON en las variables de entorno.');
