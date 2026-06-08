@@ -127,3 +127,27 @@ Si el botón **Borrar resultados de simulación** muestra error, ejecuta en Supa
 `parche-reset-resultados-v4.sql`
 
 Este parche crea la función `reset_tournament_results_v4()`, reinicia marcadores, puntos y bonus, apaga el modo simulación y no borra usuarios, pagos ni pronósticos.
+
+
+## Parche V7 · Eliminar participantes
+
+Si necesitas que el admin pueda eliminar participantes ya registrados o aprobados:
+
+1. En Supabase abre **SQL Editor → New query**.
+2. Ejecuta el archivo `parche-eliminar-participantes-v7.sql`.
+3. Sube este proyecto actualizado a GitHub/Vercel.
+4. En la app entra a **Admin → Participantes** y usa el botón **Eliminar**.
+
+Por seguridad, la app no permite eliminar el propio usuario admin ni eliminar otros administradores desde el panel.
+
+## Parche V8 · Restablecer contraseñas desde Admin
+
+Si necesitas que el administrador pueda cambiar la contraseña temporal de un participante:
+
+1. En Supabase abre **SQL Editor → New query**.
+2. Ejecuta el archivo `parche-restablecer-contrasenas-v8.sql`.
+3. Sube esta versión del proyecto a GitHub/Vercel.
+4. En la app entra como admin a **Admin → Participantes**.
+5. Usa el botón **Restablecer clave** en el participante correspondiente.
+
+La contraseña anterior no se puede ver. El administrador asigna una clave temporal nueva y el usuario puede cambiarla desde **Perfil → Cambiar contraseña**.

@@ -865,6 +865,8 @@ async function admUsers(b){
           <button class="btn sm" data-save-user="${u.id}">Guardar</button>
           <button class="btn sm ghost" data-approve-user="${u.id}">Aprobar</button>
           <button class="btn sm ghost" data-paid-user="${u.id}">Marcar pagado</button>
+          ${(!u.is_admin && u.id!==ME.id) ? `<button class="btn sm ghost" data-reset-pass-user="${u.id}" data-reset-pass-name="${esc(u.nombre||u.username)}" data-reset-pass-username="${esc(u.username)}">Restablecer clave</button>` : ''}
+          ${(!u.is_admin && u.id!==ME.id) ? `<button class="btn sm coral" data-delete-user="${u.id}" data-delete-name="${esc(u.nombre||u.username)}">Eliminar</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -884,6 +886,44 @@ async function admUsers(b){
     const { error }=await sb.from('profiles').update({payment_status:'pagado',amount_paid:due,payment_updated_at:new Date().toISOString()}).eq('id',uid);
     if(error) return toast('No se pudo marcar pago','err');
     toast('Pago marcado ✓','ok'); admUsers(b);
+  });
+  b.querySelectorAll('[data-reset-pass-user]').forEach(btn=>btn.onclick=async()=>{
+    const uid=btn.dataset.resetPassUser;
+    const nombre=btn.dataset.resetPassName || 'este participante';
+    const username=btn.dataset.resetPassUsername || '';
+    const pass=prompt(`Nueva contraseña temporal para ${nombre} (mínimo 6 caracteres):`);
+    if(pass===null) return;
+    if(!pass || pass.length<6) return toast('La contraseña debe tener mínimo 6 caracteres','err');
+    const pass2=prompt('Confirma la nueva contraseña:');
+    if(pass2===null) return toast('Restablecimiento cancelado','err');
+    if(pass!==pass2) return toast('Las contraseñas no coinciden','err');
+    btn.disabled=true; btn.textContent='Restableciendo…';
+    const { error } = await sb.rpc('admin_reset_user_password',{ target_user_id: uid, new_password: pass });
+    if(error){ btn.disabled=false; btn.textContent='Restablecer clave'; return toast('No se pudo restablecer: '+error.message,'err'); }
+    btn.disabled=false; btn.textContent='Restablecer clave';
+    toast('Contraseña restablecida ✓','ok');
+    alert(`Contraseña restablecida correctamente.
+
+Usuario: ${username}
+Contraseña temporal: ${pass}
+
+Entrégale estos datos al participante y pídele cambiar la clave desde Perfil.`);
+  });
+  b.querySelectorAll('[data-delete-user]').forEach(btn=>btn.onclick=async()=>{
+    const uid=btn.dataset.deleteUser;
+    const nombre=btn.dataset.deleteName || 'este participante';
+    const ok=confirm(`¿Eliminar definitivamente a ${nombre}?
+
+Se borrará su cuenta, perfil, pronósticos y bonus. Esta acción no se puede deshacer.`);
+    if(!ok) return;
+    const confirmText=prompt('Para confirmar escribe ELIMINAR');
+    if(confirmText !== 'ELIMINAR') return toast('Eliminación cancelada','err');
+    btn.disabled=true; btn.textContent='Eliminando…';
+    const { error } = await sb.rpc('admin_delete_participant',{ target_user_id: uid });
+    if(error){ btn.disabled=false; btn.textContent='Eliminar'; return toast('No se pudo eliminar: '+error.message,'err'); }
+    toast('Participante eliminado ✓','ok');
+    await Promise.all([loadLeaderboard(), loadNotifs()]);
+    renderTabla(); paintBell(); admUsers(b);
   });
 }
 async function saveUserAdmin(uid,row,b){
