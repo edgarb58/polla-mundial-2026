@@ -831,6 +831,7 @@ function renderAdmin(){
   v.innerHTML=`<div class="section-title">Panel de administración</div>
     <div class="adm-tabs" id="admTabs">
       <button data-a="results" class="${admTab==='results'?'on':''}">Resultados</button>
+      <button data-a="missing" class="${admTab==='missing'?'on':''}">Faltantes día</button>
       <button data-a="users" class="${admTab==='users'?'on':''}">Participantes</button>
       <button data-a="knockout" class="${admTab==='knockout'?'on':''}">Eliminatorias</button>
       <button data-a="bonus" class="${admTab==='bonus'?'on':''}">Bonus oficial</button>
@@ -841,6 +842,7 @@ function renderAdmin(){
   $('#admTabs').onclick=e=>{const b=e.target.closest('[data-a]');if(b){admTab=b.dataset.a;renderAdmin();}};
   const body=$('#admBody');
   if(admTab==='results') admResults(body);
+  if(admTab==='missing') admMissingPreds(body);
   if(admTab==='users') admUsers(body);
   if(admTab==='knockout') admKnockout(body);
   if(admTab==='bonus') admBonus(body);
@@ -974,6 +976,91 @@ async function saveUserAdmin(uid,row,b){
   if(error) return toast('No se pudo guardar','err');
   toast('Participante actualizado ✓','ok');
   if(b) admUsers(b);
+}
+
+
+async function admMissingPreds(b){
+  const all = [...MATCHES].sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));
+  const dateKey = d => new Date(d).toLocaleDateString('en-CA',{timeZone:'America/Bogota'});
+  const dateLabel = k => new Date(k+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const groups = {};
+  all.forEach(m=>{ const k=dateKey(m.kickoff); (groups[k]=groups[k]||[]).push(m); });
+  const keys = Object.keys(groups).sort();
+  const todayKey = dateKey(now());
+  const selected = window._admMissingDate && groups[window._admMissingDate]
+    ? window._admMissingDate
+    : (keys.includes(todayKey) ? todayKey : keys[0]);
+  window._admMissingDate = selected;
+  const shown = groups[selected] || [];
+
+  b.innerHTML = `<div class="card" style="margin-bottom:12px">
+      <h3 style="font-size:15px;margin-bottom:8px">Faltantes de pronóstico por día</h3>
+      <small class="hint" style="margin:0 0 12px">Consulta qué participantes aprobados no han ingresado marcador para los partidos de una fecha. Esta vista no revela los marcadores pronosticados, solo si ya registraron o no.</small>
+      <div class="field" style="margin-bottom:10px"><label>Fecha de partidos</label><select id="adm_missing_date">
+        ${keys.map(k=>`<option value="${k}" ${k===selected?'selected':''}>${dateLabel(k)} · ${groups[k].length} partido(s)</option>`).join('')}
+      </select></div>
+      <small class="hint" style="margin:0">Fecha consultada: <b>${dateLabel(selected||todayKey)}</b></small>
+    </div>
+    <div id="adm_missing_body"><div class="card"><div class="spinner"></div></div></div>`;
+
+  const sel = $('#adm_missing_date');
+  if(sel) sel.onchange = ()=>{ window._admMissingDate = sel.value; admMissingPreds(b); };
+
+  const body = $('#adm_missing_body');
+  if(!selected){ body.innerHTML = `<div class="card"><div class="empty" style="padding:18px">No hay fechas de partidos cargadas.</div></div>`; return; }
+
+  const { data, error } = await sb.rpc('admin_prediction_status_for_day',{ target_date: selected });
+  if(error){
+    body.innerHTML = `<div class="card"><div class="empty" style="padding:18px">No se pudo consultar: ${esc(error.message)}<br><br>Ejecuta el parche SQL V10 en Supabase.</div></div>`;
+    return;
+  }
+
+  const rows = data || [];
+  const byMatch = {};
+  rows.forEach(r=>{ (byMatch[r.match_id]=byMatch[r.match_id]||[]).push(r); });
+  const totalParticipants = shown.length && rows.length ? Math.round(rows.length / shown.length) : 0;
+  const totalMissing = rows.filter(r=>!r.has_prediction).length;
+  const totalDone = rows.filter(r=>r.has_prediction).length;
+  const allMissingText = shown.map(m=>{
+    const arr = (byMatch[m.id]||[]).filter(r=>!r.has_prediction);
+    if(!arr.length) return `${m.home_team} vs ${m.away_team}: todos registraron pronóstico.`;
+    return `${m.home_team} vs ${m.away_team}:\n` + arr.map(r=>`- ${r.nombre||r.username} (@${r.username}) Tel: ${r.telefono||'—'}`).join('\n');
+  }).join('\n\n');
+
+  body.innerHTML = `<div class="card" style="margin-bottom:12px">
+      <h3 style="font-size:15px;margin-bottom:8px">Resumen del día</h3>
+      <small class="hint" style="margin:0">Participantes aprobados: <b>${totalParticipants}</b> · Pronósticos registrados: <b>${totalDone}</b> · Faltantes: <b>${totalMissing}</b></small>
+      <button class="btn sm ghost" id="copy_missing" style="margin-top:12px">Copiar lista de faltantes</button>
+    </div>
+    ${shown.map(m=>{
+      const arr = byMatch[m.id] || [];
+      const missing = arr.filter(r=>!r.has_prediction);
+      const done = arr.filter(r=>r.has_prediction).length;
+      const total = arr.length;
+      return `<div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <div style="min-width:0">
+            <h3 style="font-size:15px">${esc(m.home_team)} vs ${esc(m.away_team)}</h3>
+            <div style="font-size:12px;color:var(--dim);font-weight:700">${new Date(m.kickoff).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+          <span class="pill" style="color:${missing.length?'var(--gold)':'var(--lime)'}">${done}/${total} listos</span>
+        </div>
+        ${missing.length ? `<div style="font-size:12px;color:var(--mut);line-height:1.55;margin-bottom:8px"><b>Faltan ${missing.length}:</b></div>
+          ${missing.map(r=>`<div class="userrow" style="padding:9px 0">
+            <div class="info"><div class="n">${esc(r.nombre||r.username)}</div><div class="m">@${esc(r.username)} · Tel: ${esc(r.telefono||'—')} · Cédula: ${esc(r.cedula||'—')}</div></div>
+          </div>`).join('')}` : `<div class="empty" style="padding:14px">Todos los participantes aprobados ya registraron este marcador.</div>`}
+      </div>`;
+    }).join('')}`;
+
+  const copyBtn = $('#copy_missing');
+  if(copyBtn) copyBtn.onclick = async()=>{
+    try{
+      await navigator.clipboard.writeText(allMissingText || 'No hay faltantes.');
+      toast('Lista copiada ✓','ok');
+    }catch(e){
+      toast('No se pudo copiar automáticamente','err');
+    }
+  };
 }
 
 function admResults(b){

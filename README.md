@@ -156,3 +156,16 @@ La contraseña anterior no se puede ver. El administrador asigna una clave tempo
 ## Actualización V9 · Consulta de goleadores
 
 Para permitir que los participantes consulten las apuestas de goleador de todos después del cierre, ejecuta en Supabase el archivo `parche-consultar-goleadores-v9.sql` y despliega esta versión. En la app aparecerá la opción en **Bonus → Apuestas de goleador de todos**.
+
+
+## Actualización V10 · Faltantes de pronósticos por día
+
+Esta versión agrega en el panel **Admin → Faltantes día** una consulta para ver qué participantes aprobados no han ingresado marcador para los partidos de una fecha.
+
+Antes de usarla, ejecuta en Supabase el archivo:
+
+```text
+parche-faltantes-pronosticos-dia-v10.sql
+```
+
+La consulta no revela los marcadores pronosticados; solo muestra si el participante ya registró o no su pronóstico, junto con usuario, teléfono y cédula para facilitar el seguimiento.
