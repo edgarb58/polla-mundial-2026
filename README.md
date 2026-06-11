@@ -151,3 +151,8 @@ Si necesitas que el administrador pueda cambiar la contraseña temporal de un pa
 5. Usa el botón **Restablecer clave** en el participante correspondiente.
 
 La contraseña anterior no se puede ver. El administrador asigna una clave temporal nueva y el usuario puede cambiarla desde **Perfil → Cambiar contraseña**.
+
+
+## Actualización V9 · Consulta de goleadores
+
+Para permitir que los participantes consulten las apuestas de goleador de todos después del cierre, ejecuta en Supabase el archivo `parche-consultar-goleadores-v9.sql` y despliega esta versión. En la app aparecerá la opción en **Bonus → Apuestas de goleador de todos**.

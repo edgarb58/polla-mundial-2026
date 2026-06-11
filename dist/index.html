@@ -700,6 +700,13 @@ function renderBonus(){
   const golDL=new Date(CONFIG.goleador_deadline), t4DL=new Date(CONFIG.top4_deadline);
   const golOpen= now()<golDL, t4Open= now()<t4DL;
   const teamOpts = (sel)=>`<option value="">— elegir —</option>`+TEAMS.map(t=>`<option ${sel===t.name?'selected':''}>${esc(t.name)}</option>`).join('');
+  const goleadoresBox = golOpen ? '' : `
+  <div class="card" style="margin-bottom:16px">
+    <h3 style="font-size:15px;margin-bottom:8px">👀 Apuestas de goleador de todos</h3>
+    <small class="hint" style="margin:0 0 12px">Disponible porque ya cerró el plazo de goleador. Aquí solo se muestran participantes aprobados.</small>
+    <button class="btn sm ghost" id="bn_gol_all">Ver goleadores elegidos</button>
+    <div id="bn_gol_all_box" style="margin-top:12px"></div>
+  </div>`;
   v.innerHTML = `
   <div class="bonus-banner"><div class="ttl">⭐ Goleador del Mundial</div>
     <div class="dl">${golOpen?`Cierra: ${fmtDate(golDL)} · vale ${CONFIG.pts_goleador} pts`:'🔒 Cerrado'}</div></div>
@@ -708,6 +715,7 @@ function renderBonus(){
       <input id="bn_gol" value="${esc(MYBONUS?.goleador||'')}" ${golOpen?'':'disabled'} placeholder="Nombre del jugador"></div>
     ${golOpen?`<button class="btn sm" id="bn_gol_save">Guardar goleador</button>`:''}
   </div>
+  ${goleadoresBox}
   <div class="bonus-banner"><div class="ttl">🏆 Top 4 del torneo</div>
     <div class="dl">${t4Open?`Cierra antes de dieciseisavos: ${fmtDate(t4DL)} · ${CONFIG.pts_top4_each} pts c/u`:'🔒 Cerrado'}</div></div>
   <div class="card">
@@ -718,16 +726,39 @@ function renderBonus(){
       <div class="field"><label>4️⃣ Cuarto</label><select id="bn_t4" ${t4Open?'':'disabled'}>${teamOpts(MYBONUS?.top4)}</select></div>
     </div>
     ${t4Open?`<button class="btn sm" id="bn_t4_save">Guardar Top 4</button>`:''}
-    <small class="hint">Solo tú ves tus apuestas bonus hasta que cierre el plazo. El puntaje se suma automáticamente cuando el admin publique los resultados oficiales.</small>
+    <small class="hint">Solo tú ves tus apuestas bonus hasta que cierre cada plazo. El puntaje se suma automáticamente cuando el admin publique los resultados oficiales.</small>
   </div>`;
   if($('#bn_gol_save')) $('#bn_gol_save').onclick=async()=>{
     await upsertBonus({goleador:$('#bn_gol').value.trim()}); toast('Goleador guardado ✓','ok');
   };
+  if($('#bn_gol_all')) $('#bn_gol_all').onclick=loadAllGoleadores;
   if($('#bn_t4_save')) $('#bn_t4_save').onclick=async()=>{
     await upsertBonus({top1:$('#bn_t1').value,top2:$('#bn_t2').value,top3:$('#bn_t3').value,top4:$('#bn_t4').value});
     toast('Top 4 guardado ✓','ok');
   };
 }
+
+async function loadAllGoleadores(){
+  const btn=$('#bn_gol_all'), box=$('#bn_gol_all_box');
+  if(!box) return;
+  if(btn){ btn.disabled=true; btn.textContent='Cargando…'; }
+  box.innerHTML='<div class="spinner" style="margin:18px auto"></div>';
+  const { data, error } = await sb.rpc('get_goleador_predictions');
+  if(btn){ btn.disabled=false; btn.textContent='Actualizar lista'; }
+  if(error){ box.innerHTML=`<div class="empty" style="padding:16px">No se pudo consultar: ${esc(error.message)}</div>`; return; }
+  const rows=data||[];
+  if(!rows.length){ box.innerHTML='<div class="empty" style="padding:16px">Aún no hay apuestas de goleador registradas.</div>'; return; }
+  const counts={};
+  rows.forEach(r=>{ const k=(r.goleador||'').trim(); if(k) counts[k]=(counts[k]||0)+1; });
+  const resumen=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  box.innerHTML = `
+    <div style="font-size:12px;color:var(--dim);font-weight:800;margin-bottom:8px">${rows.length} participantes con goleador registrado</div>
+    <div style="margin-bottom:12px">${resumen.map(([g,c])=>`<span class="pill" style="margin:2px 3px 4px 0;color:var(--gold)">${esc(g)} · ${c}</span>`).join('')}</div>
+    <div style="border-top:1px solid var(--line);padding-top:8px">
+      ${rows.map(r=>`<div class="rev-row"><span>${esc(r.nombre||r.username||'—')} ${r.user_id===ME.id?'<span class="pill" style="color:var(--teal)">tú</span>':''}</span><span style="text-align:right"><b>${esc(r.goleador)}</b></span></div>`).join('')}
+    </div>`;
+}
+
 async function upsertBonus(patch){
   const row=Object.assign({user_id:ME.id,updated_at:new Date().toISOString()}, MYBONUS||{}, patch);
   delete row.points;
