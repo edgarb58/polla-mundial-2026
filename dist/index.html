@@ -496,21 +496,38 @@ function ptClass(p){ if(p===CONFIG.pts_exact) return 'win'; if(p>0) return 'mid'
 
 function renderPartidos(){
   const v=$('#viewPartidos');
-  const groups = MATCHES.filter(m=>m.round==='group');
-  const knockout = MATCHES.filter(m=>m.round!=='group');
-  let html = `<div class="section-title">Próximos partidos</div>`;
-  // próximo no jugado
-  const upcoming = [...MATCHES].filter(m=>!m.finished).sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff))[0];
-  if(upcoming) html += matchCard(upcoming,true);
-  html += `<div class="section-title">Fase de grupos</div>`;
-  const byJ = {};
-  groups.forEach(m=>{ const k=`Grupo ${m.group_code} · J${m.jornada}`; (byJ[k]=byJ[k]||[]).push(m); });
-  Object.keys(byJ).forEach(k=>{ html+=`<div style="font-size:12px;color:var(--dim);font-weight:800;margin:14px 2px 8px;letter-spacing:.05em">${k}</div>`;
-    byJ[k].forEach(m=>html+=matchCard(m)); });
-  if(knockout.length){
-    html += `<div class="section-title">Eliminatorias</div>`;
-    knockout.forEach(m=>html+=matchCard(m));
-  }
+  const ordered = [...MATCHES].sort((a,b)=> new Date(a.kickoff) - new Date(b.kickoff) || (a.id||0) - (b.id||0));
+  if(!ordered.length){ v.innerHTML=emptyState('⚽','Sin partidos cargados','Cuando el admin publique partidos aparecerán aquí.'); return; }
+
+  let html = `<div class="section-title">Calendario de partidos</div>
+    <div class="card" style="margin-bottom:12px;padding:12px 14px">
+      <div style="font-size:13px;color:var(--mut);font-weight:700;line-height:1.45">
+        Los partidos están ordenados por <b style="color:var(--txt)">fecha y hora de juego</b>. Revisa día por día para no dejar pronósticos pendientes.
+      </div>
+    </div>`;
+
+  const byDate = {};
+  ordered.forEach(m=>{
+    const dt = new Date(m.kickoff);
+    const key = dt.toLocaleDateString('es-CO',{year:'numeric',month:'2-digit',day:'2-digit'});
+    if(!byDate[key]) byDate[key] = { date: dt, matches: [] };
+    byDate[key].matches.push(m);
+  });
+
+  Object.values(byDate)
+    .sort((a,b)=>a.date-b.date)
+    .forEach(group=>{
+      const title = group.date.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+      const count = group.matches.length;
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 2px 9px">
+        <div style="font-size:12px;color:var(--dim);font-weight:900;letter-spacing:.06em;text-transform:uppercase">${esc(title)}</div>
+        <span class="pill">${count} partido${count===1?'':'s'}</span>
+      </div>`;
+      group.matches
+        .sort((a,b)=> new Date(a.kickoff) - new Date(b.kickoff) || (a.id||0) - (b.id||0))
+        .forEach(m=>html+=matchCard(m));
+    });
+
   v.innerHTML = html;
   bindMatchInputs(v);
 }
