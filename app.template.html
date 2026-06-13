@@ -499,25 +499,44 @@ function renderPartidos(){
   const ordered = [...MATCHES].sort((a,b)=> new Date(a.kickoff) - new Date(b.kickoff) || (a.id||0) - (b.id||0));
   if(!ordered.length){ v.innerHTML=emptyState('⚽','Sin partidos cargados','Cuando el admin publique partidos aparecerán aquí.'); return; }
 
-  let html = `<div class="section-title">Calendario de partidos</div>
+  const currentNow = now();
+  const isPastMatch = (m)=> m.finished || new Date(m.kickoff) < currentNow;
+  const futureMatches = ordered.filter(m=>!isPastMatch(m));
+  const pastMatches = ordered.filter(m=>isPastMatch(m)).sort((a,b)=> new Date(b.kickoff) - new Date(a.kickoff) || (b.id||0) - (a.id||0));
+  const nextMatch = futureMatches.find(m=>!m.finished) || ordered.find(m=>!m.finished);
+
+  const dateKey = (m)=> new Date(m.kickoff).toLocaleDateString('es-CO',{year:'numeric',month:'2-digit',day:'2-digit'});
+  const dateTitle = (d)=> d.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  const groupByDate = (list)=>{
+    const byDate = {};
+    list.forEach(m=>{
+      const dt = new Date(m.kickoff);
+      const key = dateKey(m);
+      if(!byDate[key]) byDate[key] = { date: dt, matches: [] };
+      byDate[key].matches.push(m);
+    });
+    return Object.values(byDate).sort((a,b)=>a.date-b.date);
+  };
+
+  let html = '';
+
+  if(nextMatch){
+    html += `<div class="section-title">Próximo partido</div>`;
+    html += matchCard(nextMatch,true);
+  }
+
+  html += `<div class="section-title">Próximos partidos</div>
     <div class="card" style="margin-bottom:12px;padding:12px 14px">
       <div style="font-size:13px;color:var(--mut);font-weight:700;line-height:1.45">
-        Los partidos están ordenados por <b style="color:var(--txt)">fecha y hora de juego</b>. Revisa día por día para no dejar pronósticos pendientes.
+        Los partidos pendientes están ordenados por <b style="color:var(--txt)">fecha y hora de juego</b>. Revisa día por día para no dejar pronósticos pendientes.
       </div>
     </div>`;
 
-  const byDate = {};
-  ordered.forEach(m=>{
-    const dt = new Date(m.kickoff);
-    const key = dt.toLocaleDateString('es-CO',{year:'numeric',month:'2-digit',day:'2-digit'});
-    if(!byDate[key]) byDate[key] = { date: dt, matches: [] };
-    byDate[key].matches.push(m);
-  });
-
-  Object.values(byDate)
-    .sort((a,b)=>a.date-b.date)
-    .forEach(group=>{
-      const title = group.date.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  if(!futureMatches.length){
+    html += `<div class="empty" style="padding:24px 12px">No hay partidos próximos pendientes.</div>`;
+  }else{
+    groupByDate(futureMatches).forEach(group=>{
+      const title = dateTitle(group.date);
       const count = group.matches.length;
       html += `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 2px 9px">
         <div style="font-size:12px;color:var(--dim);font-weight:900;letter-spacing:.06em;text-transform:uppercase">${esc(title)}</div>
@@ -527,6 +546,35 @@ function renderPartidos(){
         .sort((a,b)=> new Date(a.kickoff) - new Date(b.kickoff) || (a.id||0) - (b.id||0))
         .forEach(m=>html+=matchCard(m));
     });
+  }
+
+  html += `<div class="section-title">Partidos anteriores</div>
+    <div class="card" style="margin-bottom:12px;padding:12px 14px">
+      <div style="font-size:13px;color:var(--mut);font-weight:700;line-height:1.45">
+        Para mantener limpia la pantalla, los partidos que ya pasaron quedan agrupados por día. Toca una fecha para desplegarlos y revisar resultados o pronósticos cerrados.
+      </div>
+    </div>`;
+
+  if(!pastMatches.length){
+    html += `<div class="empty" style="padding:24px 12px">Aún no hay partidos anteriores.</div>`;
+  }else{
+    const pastGroups = groupByDate(pastMatches).sort((a,b)=>b.date-a.date);
+    pastGroups.forEach(group=>{
+      const title = dateTitle(group.date);
+      const count = group.matches.length;
+      html += `<details style="margin:10px 0;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--panel2));overflow:hidden">
+        <summary style="list-style:none;cursor:pointer;padding:14px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font-size:12px;color:var(--txt);font-weight:900;letter-spacing:.06em;text-transform:uppercase">${esc(title)}</span>
+          <span class="pill">${count} partido${count===1?'':'s'} · ver</span>
+        </summary>
+        <div style="padding:0 12px 12px">
+          ${group.matches
+            .sort((a,b)=> new Date(a.kickoff) - new Date(b.kickoff) || (a.id||0) - (b.id||0))
+            .map(m=>matchCard(m)).join('')}
+        </div>
+      </details>`;
+    });
+  }
 
   v.innerHTML = html;
   bindMatchInputs(v);
