@@ -500,10 +500,16 @@ function renderPartidos(){
   if(!ordered.length){ v.innerHTML=emptyState('⚽','Sin partidos cargados','Cuando el admin publique partidos aparecerán aquí.'); return; }
 
   const currentNow = now();
-  const isPastMatch = (m)=> m.finished || new Date(m.kickoff) < currentNow;
-  const futureMatches = ordered.filter(m=>!isPastMatch(m));
-  const pastMatches = ordered.filter(m=>isPastMatch(m)).sort((a,b)=> new Date(b.kickoff) - new Date(a.kickoff) || (b.id||0) - (a.id||0));
-  const nextMatch = futureMatches.find(m=>!m.finished) || ordered.find(m=>!m.finished);
+  const LIVE_WINDOW_MS = 3 * 60 * 60 * 1000; // ventana visual para destacar partidos en juego
+  const kickoffDate = (m)=> new Date(m.kickoff);
+  const isLiveMatch = (m)=> !m.finished && kickoffDate(m) <= currentNow && (currentNow - kickoffDate(m)) <= LIVE_WINDOW_MS;
+  const isFutureMatch = (m)=> !m.finished && kickoffDate(m) > currentNow;
+  const isPastMatch = (m)=> m.finished || (!m.finished && kickoffDate(m) <= currentNow && !isLiveMatch(m));
+
+  const liveMatches = ordered.filter(isLiveMatch);
+  const futureMatches = ordered.filter(isFutureMatch);
+  const pastMatches = ordered.filter(isPastMatch).sort((a,b)=> new Date(b.kickoff) - new Date(a.kickoff) || (b.id||0) - (a.id||0));
+  const nextMatch = futureMatches[0] || null;
 
   const dateKey = (m)=> new Date(m.kickoff).toLocaleDateString('es-CO',{year:'numeric',month:'2-digit',day:'2-digit'});
   const dateTitle = (d)=> d.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
@@ -519,6 +525,15 @@ function renderPartidos(){
   };
 
   let html = '';
+
+  if(liveMatches.length){
+    html += `<div class="section-title">${liveMatches.length===1?'Partido en juego':'Partidos en juego'}</div>`;
+    html += `<div data-live-zone="1">`;
+    liveMatches
+      .sort((a,b)=> new Date(a.kickoff) - new Date(b.kickoff) || (a.id||0) - (b.id||0))
+      .forEach(m=>html+=matchCard(m,true));
+    html += `</div>`;
+  }
 
   if(nextMatch){
     html += `<div class="section-title">Próximo partido</div>`;
@@ -624,10 +639,20 @@ function countdownLabel(m){
 }
 function tickCountdowns(){
   let needRerender=false;
+  const currentNow = now();
+  const LIVE_WINDOW_MS = 3 * 60 * 60 * 1000;
   MATCHES.forEach(m=>{
     const el=document.querySelector(`[data-cnt="${m.id}"]`); if(el) el.textContent=countdownLabel(m);
     const card=document.querySelector(`.match[data-mid="${m.id}"]`);
-    if(card){ const lockedNow=isLocked(m); const shownLocked=!!card.querySelector('[data-reveal]'); if(lockedNow!==shownLocked) needRerender=true; }
+    if(card){
+      const lockedNow=isLocked(m);
+      const shownLocked=!!card.querySelector('[data-reveal]');
+      if(lockedNow!==shownLocked) needRerender=true;
+      const kick=new Date(m.kickoff);
+      const liveNow=!m.finished && kick <= currentNow && (currentNow - kick) <= LIVE_WINDOW_MS;
+      const shownLive=!!card.closest('[data-live-zone]');
+      if(liveNow!==shownLive) needRerender=true;
+    }
   });
   if(needRerender && $('#viewPartidos').classList.contains('on')) renderPartidos();
 }
