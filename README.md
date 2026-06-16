@@ -171,3 +171,8 @@ parche-faltantes-pronosticos-dia-v10.sql
 La consulta no revela los marcadores pronosticados; solo muestra si el participante ya registró o no su pronóstico, junto con usuario, teléfono y cédula para facilitar el seguimiento.
 
 - Módulo Partidos: lista cronológica agrupada por fecha para facilitar el control de pronósticos.
+
+
+## V15 - corrección carga de pronósticos propios del admin
+
+Esta versión cambia la carga de pronósticos propios para consultar directamente `predictions.eq('user_id', ME.id)`. Esto evita que un usuario administrador, que por permisos puede leer muchos pronósticos, deje de ver los suyos por límites o paginación del cliente Supabase.

@@ -395,9 +395,22 @@ async function loadAll(){
   await Promise.all([loadPreds(), loadBonus(), loadLeaderboard(), loadNotifs()]);
 }
 async function loadPreds(){
-  const { data } = await sb.from('predictions').select('*');
-  MYPRED={}; (data||[]).forEach(p=>{ if(p.user_id===ME.id) MYPRED[p.match_id]=p; });
-  window._ALLPRED = data||[];
+  // Cargar SOLO mis pronósticos.
+  // Antes se consultaban todos y luego se filtraba en el navegador;
+  // en perfiles admin eso puede fallar cuando Supabase pagina/limita muchas filas.
+  const { data, error } = await sb
+    .from('predictions')
+    .select('user_id,match_id,home_pred,away_pred,points,updated_at')
+    .eq('user_id', ME.id);
+
+  MYPRED = {};
+  if(error){
+    console.error('Error cargando mis pronósticos', error);
+    toast('No se pudieron cargar tus pronósticos','err');
+    return;
+  }
+  (data||[]).forEach(p=>{ MYPRED[String(p.match_id)] = p; });
+  window._MYPRED = data||[];
 }
 async function loadBonus(){
   const { data } = await sb.from('bonus_predictions').select('*').eq('user_id',ME.id).maybeSingle();
