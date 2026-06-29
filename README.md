@@ -176,3 +176,8 @@ La consulta no revela los marcadores pronosticados; solo muestra si el participa
 ## V15 - corrección carga de pronósticos propios del admin
 
 Esta versión cambia la carga de pronósticos propios para consultar directamente `predictions.eq('user_id', ME.id)`. Esto evita que un usuario administrador, que por permisos puede leer muchos pronósticos, deje de ver los suyos por límites o paginación del cliente Supabase.
+
+
+## V16 · Consulta pública del Top 4
+
+Ejecuta `parche-consulta-top4-v16.sql` en Supabase. Luego despliega este repositorio en Vercel. En la app, dentro de **Bonus**, aparecerá el botón **Ver Top 4 registrados** cuando cierre el plazo del Top 4.

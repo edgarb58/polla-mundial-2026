@@ -395,9 +395,22 @@ async function loadAll(){
   await Promise.all([loadPreds(), loadBonus(), loadLeaderboard(), loadNotifs()]);
 }
 async function loadPreds(){
-  const { data } = await sb.from('predictions').select('*');
-  MYPRED={}; (data||[]).forEach(p=>{ if(p.user_id===ME.id) MYPRED[p.match_id]=p; });
-  window._ALLPRED = data||[];
+  // Cargar SOLO mis pronósticos.
+  // Antes se consultaban todos y luego se filtraba en el navegador;
+  // en perfiles admin eso puede fallar cuando Supabase pagina/limita muchas filas.
+  const { data, error } = await sb
+    .from('predictions')
+    .select('user_id,match_id,home_pred,away_pred,points,updated_at')
+    .eq('user_id', ME.id);
+
+  MYPRED = {};
+  if(error){
+    console.error('Error cargando mis pronósticos', error);
+    toast('No se pudieron cargar tus pronósticos','err');
+    return;
+  }
+  (data||[]).forEach(p=>{ MYPRED[String(p.match_id)] = p; });
+  window._MYPRED = data||[];
 }
 async function loadBonus(){
   const { data } = await sb.from('bonus_predictions').select('*').eq('user_id',ME.id).maybeSingle();
@@ -797,6 +810,13 @@ function renderBonus(){
     <button class="btn sm ghost" id="bn_gol_all">Ver goleadores elegidos</button>
     <div id="bn_gol_all_box" style="margin-top:12px"></div>
   </div>`;
+  const top4AllBox = t4Open ? '' : `
+  <div class="card" style="margin-top:16px">
+    <h3 style="font-size:15px;margin-bottom:8px">👀 Top 4 de todos</h3>
+    <small class="hint" style="margin:0 0 12px">Disponible porque ya cerró el plazo del Top 4. Aquí se muestran los participantes aprobados y su selección.</small>
+    <button class="btn sm ghost" id="bn_t4_all">Ver Top 4 registrados</button>
+    <div id="bn_t4_all_box" style="margin-top:12px"></div>
+  </div>`;
   v.innerHTML = `
   <div class="bonus-banner"><div class="ttl">⭐ Goleador del Mundial</div>
     <div class="dl">${golOpen?`Cierra: ${fmtDate(golDL)} · vale ${CONFIG.pts_goleador} pts`:'🔒 Cerrado'}</div></div>
@@ -816,12 +836,16 @@ function renderBonus(){
       <div class="field"><label>4️⃣ Cuarto</label><select id="bn_t4" ${t4Open?'':'disabled'}>${teamOpts(MYBONUS?.top4)}</select></div>
     </div>
     ${t4Open?`<button class="btn sm" id="bn_t4_save">Guardar Top 4</button>`:''}
-    <small class="hint">Solo tú ves tus apuestas bonus hasta que cierre cada plazo. El puntaje se suma automáticamente cuando el admin publique los resultados oficiales.</small>
-  </div>`;
+    ${t4Open
+      ? '<small class="hint">Solo tú ves tus apuestas bonus hasta que cierre cada plazo. El puntaje se suma automáticamente cuando el admin publique los resultados oficiales.</small>'
+      : '<small class="hint">El plazo del Top 4 está cerrado. Ya puedes consultar lo que registraron los demás participantes.</small>'}
+  </div>
+  ${top4AllBox}`;
   if($('#bn_gol_save')) $('#bn_gol_save').onclick=async()=>{
     await upsertBonus({goleador:$('#bn_gol').value.trim()}); toast('Goleador guardado ✓','ok');
   };
   if($('#bn_gol_all')) $('#bn_gol_all').onclick=loadAllGoleadores;
+  if($('#bn_t4_all')) $('#bn_t4_all').onclick=loadAllTop4;
   if($('#bn_t4_save')) $('#bn_t4_save').onclick=async()=>{
     await upsertBonus({top1:$('#bn_t1').value,top2:$('#bn_t2').value,top3:$('#bn_t3').value,top4:$('#bn_t4').value});
     toast('Top 4 guardado ✓','ok');
@@ -846,6 +870,50 @@ async function loadAllGoleadores(){
     <div style="margin-bottom:12px">${resumen.map(([g,c])=>`<span class="pill" style="margin:2px 3px 4px 0;color:var(--gold)">${esc(g)} · ${c}</span>`).join('')}</div>
     <div style="border-top:1px solid var(--line);padding-top:8px">
       ${rows.map(r=>`<div class="rev-row"><span>${esc(r.nombre||r.username||'—')} ${r.user_id===ME.id?'<span class="pill" style="color:var(--teal)">tú</span>':''}</span><span style="text-align:right"><b>${esc(r.goleador)}</b></span></div>`).join('')}
+    </div>`;
+}
+
+async function loadAllTop4(){
+  const btn=$('#bn_t4_all'), box=$('#bn_t4_all_box');
+  if(!box) return;
+  if(btn){ btn.disabled=true; btn.textContent='Cargando…'; }
+  box.innerHTML='<div class="spinner" style="margin:18px auto"></div>';
+  const { data, error } = await sb.rpc('get_top4_predictions');
+  if(btn){ btn.disabled=false; btn.textContent='Actualizar Top 4'; }
+  if(error){ box.innerHTML=`<div class="empty" style="padding:16px">No se pudo consultar: ${esc(error.message)}</div>`; return; }
+  const rows=data||[];
+  if(!rows.length){ box.innerHTML='<div class="empty" style="padding:16px">Aún no hay Top 4 registrados.</div>'; return; }
+
+  const hasTop4 = r => !!((r.top1||r.top2||r.top3||r.top4||'').trim?.() || r.top1 || r.top2 || r.top3 || r.top4);
+  const filled = rows.filter(hasTop4);
+  const champions={};
+  filled.forEach(r=>{ const k=(r.top1||'').trim(); if(k) champions[k]=(champions[k]||0)+1; });
+  const resumen=Object.entries(champions).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const cell=(em, label, val)=>`<div style="border:1px solid var(--line);border-radius:12px;padding:8px;background:rgba(255,255,255,.03)"><div style="font-size:11px;color:var(--dim);font-weight:900">${em} ${label}</div><div style="font-size:12.5px;font-weight:900;color:var(--txt);margin-top:3px">${esc(val||'—')}</div></div>`;
+
+  box.innerHTML = `
+    <div style="font-size:12px;color:var(--dim);font-weight:800;margin-bottom:8px">
+      ${filled.length} de ${rows.length} participantes tienen Top 4 registrado
+    </div>
+    ${resumen.length?`<div style="margin-bottom:12px"><div style="font-size:11.5px;color:var(--dim);font-weight:900;margin-bottom:5px">Campeones más elegidos</div>${resumen.map(([g,c])=>`<span class="pill" style="margin:2px 3px 4px 0;color:var(--gold)">${esc(g)} · ${c}</span>`).join('')}</div>`:''}
+    <div style="border-top:1px solid var(--line);padding-top:8px">
+      ${rows.map(r=>{
+        const fullName=esc(r.nombre||r.username||'—');
+        const tag=r.user_id===ME.id?'<span class="pill" style="color:var(--teal)">tú</span>':'';
+        const empty=!hasTop4(r);
+        return `<div style="padding:11px 0;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+            <div><b style="font-size:13px">${fullName}</b> ${tag}<div style="font-size:11.5px;color:var(--dim);font-weight:700">@${esc(r.username||'—')}</div></div>
+            ${empty?'<span class="pill" style="color:var(--coral)">Sin Top 4</span>':'<span class="pill" style="color:var(--lime)">Registrado</span>'}
+          </div>
+          ${empty?'<div class="empty" style="padding:10px">No registró Top 4.</div>':`<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px">
+            ${cell('🥇','Campeón',r.top1)}
+            ${cell('🥈','Subcampeón',r.top2)}
+            ${cell('🥉','Tercero',r.top3)}
+            ${cell('4️⃣','Cuarto',r.top4)}
+          </div>`}
+        </div>`;
+      }).join('')}
     </div>`;
 }
 
