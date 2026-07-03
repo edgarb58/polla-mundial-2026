@@ -153,6 +153,12 @@ a{color:var(--gold)}
 .chartcard h3{font-size:14px;margin-bottom:4px}
 .chartcard .sub{font-size:12px;color:var(--dim);margin-bottom:12px}
 .chwrap{position:relative;height:230px}
+.compare-tools{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0 8px}
+.compare-tools .field{margin-bottom:0}
+.compare-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 12px;flex-wrap:wrap}
+.compare-actions .hint{margin:0;flex:1;min-width:180px}
+.compare-status{font-size:11.5px;color:var(--dim);font-weight:700;margin-bottom:10px}
+@media(max-width:520px){.compare-tools{grid-template-columns:1fr}.compare-actions{align-items:flex-start}}
 
 /* ---------- notifications ---------- */
 .notif{display:flex;gap:12px;padding:13px 14px;border-radius:14px;margin-bottom:8px;
@@ -283,6 +289,7 @@ let sb = null, ME = null, PROFILE = null;
 let CONFIG = null, TEAMS = [], FLAG = {}, MATCHES = [], MYPRED = {}, MYBONUS = null;
 let LEADERBOARD = [], NOTIFS = [], READS = new Set();
 let charts = {}, tickTimer = null, configured = false;
+let STAT_COMPARE_USERS = [], STAT_COMPARE_CACHE = {};
 
 const $  = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -392,6 +399,7 @@ async function loadAll(){
   ]);
   PROFILE=prof; CONFIG=cfg; TEAMS=teams||[]; MATCHES=matches||[];
   FLAG={}; TEAMS.forEach(t=>FLAG[t.name]=t.flag);
+  STAT_COMPARE_CACHE = {};
   await Promise.all([loadPreds(), loadBonus(), loadLeaderboard(), loadNotifs()]);
 }
 async function loadPreds(){
@@ -730,6 +738,34 @@ function renderTabla(){
 }
 
 /* ════════════════ VISTA ESTADÍSTICAS ════════════════ */
+function statsCompareOptions(selected, other){
+  const users = LEADERBOARD
+    .filter(r=>r.user_id && r.user_id!==ME.id)
+    .sort((a,b)=>(a.nombre||a.username||'').localeCompare(b.nombre||b.username||''));
+  return `<option value="">— Sin comparar —</option>` + users.map(r=>{
+    const label = `${r.nombre||r.username} (@${r.username||'usuario'})`;
+    return `<option value="${esc(r.user_id)}" ${r.user_id===selected?'selected':''} ${r.user_id===other?'disabled':''}>${esc(label)}</option>`;
+  }).join('');
+}
+function statsUserLabel(id){
+  const r = LEADERBOARD.find(x=>x.user_id===id);
+  if(!r) return 'Usuario';
+  return r.user_id===ME.id ? `Yo (@${PROFILE?.username||r.username||'yo'})` : `${r.nombre||r.username} (@${r.username||'usuario'})`;
+}
+function finishedOrdered(finished){
+  return [...finished].filter(m=>m.finished).sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));
+}
+function progressDataFor(predMap, ordered){
+  let acc=0;
+  return ordered.map(m=>{
+    const p = predMap[String(m.id)] || predMap[m.id];
+    acc += (p && p.points!=null) ? Number(p.points||0) : 0;
+    return acc;
+  });
+}
+function matchShortLabel(m,i){ return `P${i+1}`; }
+function matchLongLabel(m){ return `${m.home_team} vs ${m.away_team}`; }
+
 function renderStats(){
   const v=$('#viewStats');
   const finished = MATCHES.filter(m=>m.finished);
@@ -742,6 +778,8 @@ function renderStats(){
   const myRank  = LEADERBOARD.findIndex(r=>r.user_id===ME.id)+1;
   const acc = myScored.length? Math.round((myExact+myRes)/myScored.length*100):0;
   const totalPreds = Object.keys(MYPRED).length;
+  const c1 = STAT_COMPARE_USERS[0] || '';
+  const c2 = STAT_COMPARE_USERS[1] || '';
 
   v.innerHTML = `<div class="section-title">Mis estadísticas</div>
     <div class="statgrid">
@@ -762,11 +800,21 @@ function renderStats(){
     </div>
     <div class="card chartcard">
       <h3>Mi progresión de puntos</h3>
-      <div class="sub">Puntos acumulados por partido jugado</div>
+      <div class="sub">Compara tu acumulado partido por partido con hasta dos usuarios más.</div>
+      <div class="compare-tools">
+        <div class="field"><label>Comparar con usuario 1</label><select id="cmpUser1">${statsCompareOptions(c1,c2)}</select></div>
+        <div class="field"><label>Comparar con usuario 2</label><select id="cmpUser2">${statsCompareOptions(c2,c1)}</select></div>
+      </div>
+      <div class="compare-actions">
+        <small class="hint">La línea se mantiene plana cuando un usuario no pronosticó o no sumó puntos en un partido.</small>
+        <button class="btn sm ghost" id="cmpClear" style="width:auto">Limpiar comparación</button>
+      </div>
+      <div id="cmpStatus" class="compare-status"></div>
       <div class="chwrap"><canvas id="chLine"></canvas></div>
     </div>`;
 
   drawCharts({myExact,myRes,myPart,myZero,finished});
+  setupStatsCompare(finished);
 }
 
 function drawCharts(d){
@@ -786,15 +834,108 @@ function drawCharts(d){
       datasets:[{data:top.map(r=>r.total_points),
         backgroundColor:top.map(r=>r.user_id===ME.id?'#19e3c2':'rgba(77,139,255,.55)'),borderRadius:7}]},
     options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:grid},beginAtZero:true}}}});
-  // line progression
-  let acc=0; const pts=[]; const labels=[];
-  d.finished.sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff)).forEach((m,i)=>{
-    const p=MYPRED[m.id]; if(p&&p.points!=null){ acc+=p.points; pts.push(acc); labels.push('P'+(i+1)); }
+  drawProgressChart(d.finished, {});
+}
+
+function drawProgressChart(finished, comparePreds){
+  try{ if(charts.line) charts.line.destroy(); }catch(e){}
+  const ordered = finishedOrdered(finished);
+  const labels = ordered.map(matchShortLabel);
+  const longLabels = ordered.map(matchLongLabel);
+  const grid='rgba(255,255,255,.06)';
+  const palette = [
+    {border:'#b6f24a', bg:'rgba(182,242,74,.13)'},
+    {border:'#4d8bff', bg:'rgba(77,139,255,.13)'},
+    {border:'#ff5d6c', bg:'rgba(255,93,108,.12)'}
+  ];
+  const datasets = [{
+    label: statsUserLabel(ME.id),
+    data: progressDataFor(MYPRED, ordered),
+    borderColor: palette[0].border,
+    backgroundColor: palette[0].bg,
+    fill: true,
+    tension: .32,
+    pointRadius: 3,
+    pointBackgroundColor: palette[0].border,
+    borderWidth: 3
+  }];
+  STAT_COMPARE_USERS.forEach((uid,idx)=>{
+    const c = palette[idx+1];
+    datasets.push({
+      label: statsUserLabel(uid),
+      data: progressDataFor(comparePreds[uid]||{}, ordered),
+      borderColor: c.border,
+      backgroundColor: c.bg,
+      fill: true,
+      tension: .32,
+      pointRadius: 3,
+      pointBackgroundColor: c.border,
+      borderWidth: 3
+    });
   });
   charts.line = new Chart($('#chLine'),{type:'line',
-    data:{labels,datasets:[{data:pts,borderColor:'#b6f24a',backgroundColor:'rgba(182,242,74,.12)',
-      fill:true,tension:.32,pointRadius:3,pointBackgroundColor:'#b6f24a'}]},
-    options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:grid},beginAtZero:true}}}});
+    data:{labels,datasets},
+    options:{
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{padding:14,font:{size:12}}},
+        tooltip:{callbacks:{
+          title:(items)=> longLabels[items?.[0]?.dataIndex] || '',
+          label:(ctx)=> `${ctx.dataset.label}: ${ctx.parsed.y} pts acumulados`
+        }}
+      },
+      scales:{x:{grid:{display:false}},y:{grid:{color:grid},beginAtZero:true}}
+    }});
+}
+
+async function setupStatsCompare(finished){
+  const s1=$('#cmpUser1'), s2=$('#cmpUser2'), clear=$('#cmpClear');
+  if(!s1||!s2) return;
+  const apply = async()=>{
+    let a=s1.value, b=s2.value;
+    if(a && b && a===b){ toast('Escoge dos usuarios distintos','err'); b=''; s2.value=''; }
+    STAT_COMPARE_USERS = [a,b].filter(Boolean);
+    await updateStatsComparison(finished);
+  };
+  s1.onchange=apply; s2.onchange=apply;
+  if(clear) clear.onclick=async()=>{ s1.value=''; s2.value=''; STAT_COMPARE_USERS=[]; await updateStatsComparison(finished); };
+  await updateStatsComparison(finished);
+}
+
+async function updateStatsComparison(finished){
+  const status=$('#cmpStatus');
+  const ids = STAT_COMPARE_USERS.filter(Boolean);
+  const ordered = finishedOrdered(finished);
+  const matchIds = ordered.map(m=>m.id);
+  if(!ids.length){
+    if(status) status.textContent = 'Selecciona uno o dos usuarios para comparar la progresión.';
+    drawProgressChart(finished, {});
+    return;
+  }
+  if(status) status.textContent = 'Cargando comparación…';
+  const missing = ids.filter(id=>!STAT_COMPARE_CACHE[id]);
+  if(missing.length && matchIds.length){
+    const { data, error } = await sb
+      .from('predictions')
+      .select('user_id,match_id,points')
+      .in('user_id', missing)
+      .in('match_id', matchIds);
+    missing.forEach(id=>{ STAT_COMPARE_CACHE[id] = {}; });
+    if(error){
+      console.error('Error cargando comparación de stats', error);
+      if(status) status.textContent = 'No se pudo cargar la comparación. Revisa permisos de lectura en Supabase.';
+      drawProgressChart(finished, {});
+      return;
+    }
+    (data||[]).forEach(p=>{
+      if(!STAT_COMPARE_CACHE[p.user_id]) STAT_COMPARE_CACHE[p.user_id] = {};
+      STAT_COMPARE_CACHE[p.user_id][String(p.match_id)] = p;
+    });
+  }
+  const comparePreds = {};
+  ids.forEach(id=> comparePreds[id] = STAT_COMPARE_CACHE[id] || {});
+  drawProgressChart(finished, comparePreds);
+  if(status) status.textContent = `Comparando con ${ids.map(statsUserLabel).join(' y ')}.`;
 }
 
 /* ════════════════ VISTA BONUS ════════════════ */
@@ -989,6 +1130,7 @@ function renderAdmin(){
   v.innerHTML=`<div class="section-title">Panel de administración</div>
     <div class="adm-tabs" id="admTabs">
       <button data-a="results" class="${admTab==='results'?'on':''}">Resultados</button>
+      <button data-a="missing" class="${admTab==='missing'?'on':''}">Faltantes día</button>
       <button data-a="users" class="${admTab==='users'?'on':''}">Participantes</button>
       <button data-a="knockout" class="${admTab==='knockout'?'on':''}">Eliminatorias</button>
       <button data-a="bonus" class="${admTab==='bonus'?'on':''}">Bonus oficial</button>
@@ -999,6 +1141,7 @@ function renderAdmin(){
   $('#admTabs').onclick=e=>{const b=e.target.closest('[data-a]');if(b){admTab=b.dataset.a;renderAdmin();}};
   const body=$('#admBody');
   if(admTab==='results') admResults(body);
+  if(admTab==='missing') admMissingPreds(body);
   if(admTab==='users') admUsers(body);
   if(admTab==='knockout') admKnockout(body);
   if(admTab==='bonus') admBonus(body);
@@ -1132,6 +1275,91 @@ async function saveUserAdmin(uid,row,b){
   if(error) return toast('No se pudo guardar','err');
   toast('Participante actualizado ✓','ok');
   if(b) admUsers(b);
+}
+
+
+async function admMissingPreds(b){
+  const all = [...MATCHES].sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff));
+  const dateKey = d => new Date(d).toLocaleDateString('en-CA',{timeZone:'America/Bogota'});
+  const dateLabel = k => new Date(k+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const groups = {};
+  all.forEach(m=>{ const k=dateKey(m.kickoff); (groups[k]=groups[k]||[]).push(m); });
+  const keys = Object.keys(groups).sort();
+  const todayKey = dateKey(now());
+  const selected = window._admMissingDate && groups[window._admMissingDate]
+    ? window._admMissingDate
+    : (keys.includes(todayKey) ? todayKey : keys[0]);
+  window._admMissingDate = selected;
+  const shown = groups[selected] || [];
+
+  b.innerHTML = `<div class="card" style="margin-bottom:12px">
+      <h3 style="font-size:15px;margin-bottom:8px">Faltantes de pronóstico por día</h3>
+      <small class="hint" style="margin:0 0 12px">Consulta qué participantes aprobados no han ingresado marcador para los partidos de una fecha. Esta vista no revela los marcadores pronosticados, solo si ya registraron o no.</small>
+      <div class="field" style="margin-bottom:10px"><label>Fecha de partidos</label><select id="adm_missing_date">
+        ${keys.map(k=>`<option value="${k}" ${k===selected?'selected':''}>${dateLabel(k)} · ${groups[k].length} partido(s)</option>`).join('')}
+      </select></div>
+      <small class="hint" style="margin:0">Fecha consultada: <b>${dateLabel(selected||todayKey)}</b></small>
+    </div>
+    <div id="adm_missing_body"><div class="card"><div class="spinner"></div></div></div>`;
+
+  const sel = $('#adm_missing_date');
+  if(sel) sel.onchange = ()=>{ window._admMissingDate = sel.value; admMissingPreds(b); };
+
+  const body = $('#adm_missing_body');
+  if(!selected){ body.innerHTML = `<div class="card"><div class="empty" style="padding:18px">No hay fechas de partidos cargadas.</div></div>`; return; }
+
+  const { data, error } = await sb.rpc('admin_prediction_status_for_day',{ target_date: selected });
+  if(error){
+    body.innerHTML = `<div class="card"><div class="empty" style="padding:18px">No se pudo consultar: ${esc(error.message)}<br><br>Ejecuta el parche SQL V10 en Supabase.</div></div>`;
+    return;
+  }
+
+  const rows = data || [];
+  const byMatch = {};
+  rows.forEach(r=>{ (byMatch[r.match_id]=byMatch[r.match_id]||[]).push(r); });
+  const totalParticipants = shown.length && rows.length ? Math.round(rows.length / shown.length) : 0;
+  const totalMissing = rows.filter(r=>!r.has_prediction).length;
+  const totalDone = rows.filter(r=>r.has_prediction).length;
+  const allMissingText = shown.map(m=>{
+    const arr = (byMatch[m.id]||[]).filter(r=>!r.has_prediction);
+    if(!arr.length) return `${m.home_team} vs ${m.away_team}: todos registraron pronóstico.`;
+    return `${m.home_team} vs ${m.away_team}:\n` + arr.map(r=>`- ${r.nombre||r.username} (@${r.username}) Tel: ${r.telefono||'—'}`).join('\n');
+  }).join('\n\n');
+
+  body.innerHTML = `<div class="card" style="margin-bottom:12px">
+      <h3 style="font-size:15px;margin-bottom:8px">Resumen del día</h3>
+      <small class="hint" style="margin:0">Participantes aprobados: <b>${totalParticipants}</b> · Pronósticos registrados: <b>${totalDone}</b> · Faltantes: <b>${totalMissing}</b></small>
+      <button class="btn sm ghost" id="copy_missing" style="margin-top:12px">Copiar lista de faltantes</button>
+    </div>
+    ${shown.map(m=>{
+      const arr = byMatch[m.id] || [];
+      const missing = arr.filter(r=>!r.has_prediction);
+      const done = arr.filter(r=>r.has_prediction).length;
+      const total = arr.length;
+      return `<div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <div style="min-width:0">
+            <h3 style="font-size:15px">${esc(m.home_team)} vs ${esc(m.away_team)}</h3>
+            <div style="font-size:12px;color:var(--dim);font-weight:700">${new Date(m.kickoff).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+          <span class="pill" style="color:${missing.length?'var(--gold)':'var(--lime)'}">${done}/${total} listos</span>
+        </div>
+        ${missing.length ? `<div style="font-size:12px;color:var(--mut);line-height:1.55;margin-bottom:8px"><b>Faltan ${missing.length}:</b></div>
+          ${missing.map(r=>`<div class="userrow" style="padding:9px 0">
+            <div class="info"><div class="n">${esc(r.nombre||r.username)}</div><div class="m">@${esc(r.username)} · Tel: ${esc(r.telefono||'—')} · Cédula: ${esc(r.cedula||'—')}</div></div>
+          </div>`).join('')}` : `<div class="empty" style="padding:14px">Todos los participantes aprobados ya registraron este marcador.</div>`}
+      </div>`;
+    }).join('')}`;
+
+  const copyBtn = $('#copy_missing');
+  if(copyBtn) copyBtn.onclick = async()=>{
+    try{
+      await navigator.clipboard.writeText(allMissingText || 'No hay faltantes.');
+      toast('Lista copiada ✓','ok');
+    }catch(e){
+      toast('No se pudo copiar automáticamente','err');
+    }
+  };
 }
 
 function admResults(b){

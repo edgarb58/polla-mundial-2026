@@ -1,5 +1,17 @@
 # ⚽ Polla Mundial 2026
 
+## V17 · Stats comparativas
+
+Esta versión mejora el módulo **Stats**. En la gráfica **Mi progresión de puntos** ahora se pueden seleccionar hasta dos usuarios adicionales para comparar la progresión acumulada partido por partido.
+
+- La línea principal muestra al usuario actual.
+- Los dos usuarios comparados aparecen con colores contrastantes.
+- El área sombreada de cada línea ayuda a visualizar diferencias.
+- Si un usuario no pronosticó o no sumó en un partido, su línea se mantiene plana.
+
+Antes o después de desplegar, puedes ejecutar `parche-stats-comparativas-v17.sql` en Supabase para reforzar la política de lectura de pronósticos ya iniciados/cerrados.
+
+
 App web para administrar una polla (quiniela) del Mundial 2026 con +100 participantes.
 **Frontend** estático en **Vercel** · **Backend** (base de datos, login, tiempo real y seguridad) en **Supabase** · **Código** versionado en **GitHub** con despliegue automático.
 
